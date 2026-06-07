@@ -1,14 +1,16 @@
 import { CalendarDaysIcon, LayoutDashboardIcon, UsersIcon, Wand2Icon, UserIcon, LogOutIcon } from 'lucide-react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 function SideBar({isOpen,setIsOpen}:{isOpen:boolean, setIsOpen: (val:boolean)=>void}) {
   
-  const {logout ,user} = {
-    logout: ()=>{
-      window.location.href = "/"
-    },
-    user: {name:"John Doe",email:"johndoe@gmail.com" }
+  // NOTE: No auth provider/hook found in this repo. If you have an auth hook (e.g. useAuth()),
+  // replace this mock with: const { logout, user } = useAuth()
+  const navigate = useNavigate()
+  const logout = () => {
+    // perform client-side navigation to sign-out route/home
+    navigate('/', { replace: true })
   }
+  const user = { name: 'John Doe', email: 'johndoe@gmail.com' }
 
 
   const location = useLocation();

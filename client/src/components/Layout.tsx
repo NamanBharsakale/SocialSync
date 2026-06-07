@@ -17,8 +17,8 @@ function Layout() {
 
   const [isMobileMenuOpen,setIsMobileMenuOpen] = useState(false);
   useEffect(() => {
-    document.title = 'Dashboard - Social Media Scheduler'
-  }, [])
+    document.title = `${title} - Social Media Scheduler`
+  }, [title])
   return (
     <div className='flex h-screen bg-slate-50'>
       {/**Mobile overlay */}
