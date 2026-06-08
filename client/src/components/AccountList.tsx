@@ -1,21 +1,22 @@
-import { AlertCircleIcon, CheckCircleIcon, PlusIcon } from 'lucide-react';
-import React from 'react'
+import { AlertCircleIcon, CheckCircleIcon, PlusIcon, UnplugIcon } from 'lucide-react';
 import { PLATFORMS } from '../assets/assets';
 
-
-
-interface AccountListProps{
-    account;  any[];
-    onDisconnect: (accountId: string)=>Primise<void>
+interface Account {
+    _id: string;
+    handle: string;
+    platform: string;
+    status: string;
 }
 
-
-
+interface AccountListProps{
+    accounts: Account[];
+    onDisconnect: (accountId: string)=>Promise<void>
+}
 
 function AccountList({accounts,onDisconnect}:AccountListProps) {
   
     const handleDisconnect= async (accountId: string)=>{
-        const confirm = window.confirm("Are ypu sure you want to disconnect this account?");
+        const confirm = window.confirm("Are you sure you want to disconnect this account?");
         if(!confirm) return;
         await onDisconnect(accountId)
     }
@@ -42,7 +43,7 @@ function AccountList({accounts,onDisconnect}:AccountListProps) {
             if(!meta) return null;
 
             return (
-                <div key={index} className='group bg-white border border-slate-200 rounded-2xl p-5 flex 
+                <div key={account._id} className='group bg-white border border-slate-200 rounded-2xl p-5 flex 
                 items-center gap-4 hover:border-slate-300
                 transition-all'>
                     <div className='size-12 bg-slate-50 rounded-xl flex items-center
@@ -54,12 +55,12 @@ function AccountList({accounts,onDisconnect}:AccountListProps) {
                         <div className='text-sm text-slate-500 mt-0.5'>{meta.name}</div>
                         
                     </div>
-                    <div className='flex items--center gap-1.5 shrink-0'>
+                    <div className='flex items-center gap-1.5 shrink-0'>
                         {account.status
                         ==='connected' ? (
                             <>
                             <CheckCircleIcon className='size-4 text-emerald-500' />
-                            <span className='text-xs text-emerald-600'>Connected</span>c
+                            <span className='text-xs text-emerald-600'>Connected</span>
                             </>
                         ):
                         (
@@ -69,6 +70,13 @@ function AccountList({accounts,onDisconnect}:AccountListProps) {
                             </>
                         )}
                     </div>
+
+                    <button
+                    onClick={()=> handleDisconnect(account._id)} 
+                    title='Disconnect account'
+                    className='ml-2 p-1.5 rounded-lg text-slate-300
+                     group-hover:text-red-500 transition-all' >
+                        <UnplugIcon className='size-4'/></button>
                 </div>
             )
         })}
