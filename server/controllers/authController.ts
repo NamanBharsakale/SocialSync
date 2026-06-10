@@ -1,9 +1,12 @@
 
-
 import { Request,Response } from "express";
-import { User } from "../model/User.ts";
+import bcrypt from "bcrypt"
+import { User } from "../model/User.js";
+import jwt from "jsonwebtoken";
 
-
+const generateToken=(id:string)=>{
+    return jwt.sign({id},process.env.JWT_SECRET || "fallback_secret",{expiresIn: '30d'})
+}
 
 
 
@@ -18,10 +21,19 @@ export const registerUser = async  (req:Request,res:Response):
             res.status(400).json({message:"User already exists"})
             return;
         }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password,salt);
         
+        const user = await userExists.create({name,email,password:hashedPassword});
+        if(user){
+            res.status(201).json({_id:user._id,name:user.name,email:user.email,token:generateToken(user._id.toString()) })
+        }
+        else{
+            res.status(4000).json({message: "Invalid user data"})
+        }
     }
-    catch(){
-
+    catch(error:any){
+        res.status(500).json({message:error?.message || "Invalid user data"})
     }
 }
 
