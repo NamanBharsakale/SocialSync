@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+    "start": "tsx server.ts",
+    "server": "nodemon --exec tsx server.ts",
+    "build": "tsc"  },
   "author": "",
   "license": "ISC",
+  "type": "module",
   "description": "",
   "dependencies": {
     "cors": "^2.8.6",
