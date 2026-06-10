@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { dummyGenerationData, PLATFORMS } from "../assets/assets";
-import { ArrowRightIcon, HistoryIcon, Loader2Icon, WandIcon, XIcon } from "lucide-react";
+import { ArrowRightIcon, Calendar1Icon, CalendarIcon, HistoryIcon, Loader2Icon, TimerIcon, WandIcon, XIcon } from "lucide-react";
 
 
 function AIComposer() {
@@ -9,6 +9,7 @@ function AIComposer() {
   const [tone,setTone] = useState("Professional")
   const [generateImage, setGenerateImage] = useState(true)
   const [loading,setLoading] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState("");
   const [generations,setGenerations] = useState<any[]>([]);
 
   //scheduling state
@@ -17,18 +18,25 @@ function AIComposer() {
   const [scheduleTime,setScheduleTime] = useState("");
   const [scheduling,setScheduling] = useState(false);
 
-  const fetchGenerations = async (params:type)=>{
+  const fetchGenerations = async () => {
     setGenerations(dummyGenerationData)
   }
 
   useEffect(()=>{
-    fetchGenerations()
+    fetchGenerations();
   },[])
 
   const handleGenerate = async ()=>{
     setLoading(true)
     setTimeout(()=>{
       setLoading(false)
+    },2000)
+  }
+
+  const handleSchedule = async ()=>{
+    setScheduling(true)
+    setTimeout(()=>{
+      setScheduling(false)
     },2000)
   }
 
@@ -47,7 +55,7 @@ function AIComposer() {
             className="w-full px-6 py-6 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 outline-none focus:border-slate-400 transition resize-none h-40"
             placeholder="Share you idea...(e.g. A post about the launch of our new eco-friendly coffee beans)"
              value={prompt} onChange={(e)=> setPrompt(e.target.value)}/>
-             <div className="absolute bottom right-2.5 flex items-center gap-3 text-sm">
+             <div className="absolute bottom-2.5 right-2.5 flex items-center gap-3 text-sm">
               <button onClick={()=>setGenerateImage(!generateImage)} className="flex items-center gap-3 bg-red-50 py-2 px-3 rounded-lg">
                 <span>AI Image</span>
                 <div className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors
@@ -99,8 +107,8 @@ function AIComposer() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {generations.map((gen)=>(
-              <div key={gen._id} className="group bg-white roundedd-2xl
-               border border-slate-100 p- hover:border-red-200 transition-all relative 
+              <div key={gen._id} className="group bg-white rounded-2xl
+               border border-slate-100 p-4 hover:border-red-200 transition-all relative 
                overflow-hidden">
                 <div className="flex flex-col h-full space-y-4">
                     <div className="flex items-center justify-between">
@@ -111,8 +119,12 @@ function AIComposer() {
                 
                 {gen.mediaUrl && (
                   <div className="rounded-xl overflow-hidden border border-slate-50 bg-slate-50">
-                    <img src={gen.mediaUrl} className=""w-full aspect-video object-cover opacity-90 group-hover:opacity-100 transition-opacity alt="Gen" />
-                  </div>
+                    <img
+                      src={gen.mediaUrl}
+                      className="w-full aspect-video object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                      alt="Gen"
+                    />                
+                    </div>
                 )}
                 <div className="flex items-center gap-2 pt-2">
                   <button 
@@ -194,7 +206,21 @@ function AIComposer() {
                       }
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="relative">
+                        <CalendarIcon className="size-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/>
+                        <input type="date" className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-md text-slate-900 text-sm focus:outline-none transition-all" 
+                        value={scheduledDate} 
+                        onChange={(e)=>setScheduledDate(e.target.value)}/>
+                     </div>
+                  </div>
                 </div>
+                <button onClick={handleSchedule} className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-slate-200 text-slate-700 hover:bg-red-500 hover:text-white transition">
+                  {scheduling?<Loader2Icon className="size-4 animate-spin"/>:<TimerIcon 
+                  className="size-4"/>}
+                  Schedule Post
+                </button>
             </div>
           </div>
         </div>
