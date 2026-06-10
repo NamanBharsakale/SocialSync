@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from "cors";
 import connectDB from "./config/db";
 
@@ -8,6 +8,11 @@ const app = express();
 //db connection
 await connectDB()
 
+//global error handler
+app.use((err:any,_req:Request,res:Response,_next: NextFunction)=>{
+    console.error(err)
+    res.status(500).send(err?.response?.data?.message)
+})
 
 // Middleware
 app.use(cors())
