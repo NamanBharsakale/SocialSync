@@ -31,7 +31,7 @@ function SideBar({isOpen,setIsOpen}:{isOpen:boolean, setIsOpen: (val:boolean)=>v
       <div className="p-6 pb-4">
         <div className='flex items-center gap-2 text-slate-900 font-semibold'>
           <img src='/logo.svg' alt='logo' className='h-6 w-6' />
-          <span>Scheduler</span>
+          <span>SocialSync</span>
         </div>
       </div>
       {/**Nva secion label */}
