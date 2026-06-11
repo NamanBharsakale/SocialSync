@@ -2,6 +2,8 @@ import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware.js";
 import { GoogleGenAI } from "@google/genai";
 import axios from "axios";
+import { cloudinary } from "../config/cloudinary.js";
+import { Generation } from "../model/Generation.js";
 
 //Helper to poll leonardo.ai
 const pollLeonardoJob = async (generationId: string,apiKey:string):Promise<string>=>{
@@ -111,23 +113,44 @@ export const generatePost = async (req:AuthRequest,res:Response):Promise<void>=>
                     )
                     const generationId = leoResponse.data.generate.generationId;
                     const tempUrl = await pollLeonardoJob(generationId,leonardoKey);
+
+
+                    //Upload to cloudinary for persistance
+                    const uploadResult = await cloudinary.uploader.upload(tempUrl,{
+                        folder: "ai-generations",
+
+                    });
+
+                    mediaUrl = uploadResult.secure_url;
                 }
 
             }
-            catch(error){
-
+            catch(error:any){
+                console.error("Image generation failed: ",err)
             }
         }
+        //Save generation to DB
+        const generation = await Generation.create({
+            user:req.user._id,
+            prompt,
+            content,
+            mediaUrl,
+            mediaType: mediaUrl ? "image":undefined,
+            tone
+        })
+        res.json(generation)
     }
-    catch(error){
-
+    catch(error:any){
+        res.status(500).json({
+            message:error?.message || "Server error"
+        })
     }
 }
 
 //Get generatiosn
 //GET /api/posts/generations
 export const getGenerations = async (req:AuthRequest,res:Response):Promise<void>=>{
-
+    
 }
 
 //Get post
