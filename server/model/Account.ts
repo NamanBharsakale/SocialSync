@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import mongoose from 'mongoose';
 
 const accountSchema = new mongoose.Schema({
     user: {
