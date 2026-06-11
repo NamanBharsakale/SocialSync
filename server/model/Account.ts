@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
-import { platform } from 'node:os';
-import zernio from '../config/zernio';
-import { access } from 'node:fs';
+import mongoose from 'mongoose';
 
 const accountSchema = new mongoose.Schema({
     user: {

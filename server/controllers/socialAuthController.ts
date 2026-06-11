@@ -25,7 +25,7 @@ const getOrCreateZernioProfile = async (user:any):Promise<string>=>{
         const pid = created?._id || created?.id;
 
         if(!pid){
-            throw new Error("Failde to create Zernio profile - No id returned")
+            throw new Error("Failed to create Zernio profile - No id returned")
         }
         await User.findByIdAndUpdate(user._id,{zernioProfileId:pid})
         return pid;
@@ -94,11 +94,11 @@ export const syncsAccounts = async (req:AuthRequest,res:Response):Promise<void>=
                 continue;
             }
             const rawPlatform = (zAccount.platforms || zAccount.type || "").toLowerCase();
-            const normalizedPlatforms = supportedPlatforms.find((p)=>{
+            const normalizedPlatforms = supportedPlatforms.find((p) => 
                 rawPlatform.includes(p)
-            });
+            );
             if(!normalizedPlatforms){
-                console.warn(`Skipping unsupported pplatfomrs "${rawPlatform}"`);
+                console.warn(`Skipping unsupported platform "${rawPlatform}"`);
                 continue;
             }
 
@@ -111,7 +111,7 @@ export const syncsAccounts = async (req:AuthRequest,res:Response):Promise<void>=
                     handle: zAccount.username || zAccount.name || zAccount.handle || "Unknown",
                     zernioAccountId:zid,
                     status:"connected",
-                    avatarUrl: Account.avatarUrl || zAccount.picture || zAccount.profile_image_url,
+                    avatarUrl: zAccount.avatarUrl || zAccount.picture || zAccount.profile_image_url,
 
                 },
                 {
