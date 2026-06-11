@@ -3,6 +3,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRouter from "./routes/authRoutes.js";
+import socialAuthRouter from "./routes/socialAuthRoutes.js";
 
 const app = express();
 
@@ -26,7 +27,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use("/api/auth",authRouter)
-
+app.use("/api/oauth",socialAuthRouter)
 
 
 
