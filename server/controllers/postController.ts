@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import axios from "axios";
 import { cloudinary } from "../config/cloudinary.js";
 import { Generation } from "../model/Generation.js";
-import { resolve } from "node:dns";
+
 import { Post } from "../model/Posts.js";
 
 //Helper to poll leonardo.ai
@@ -33,7 +33,9 @@ const pollLeonardoJob = async (generationId: string,apiKey:string):Promise<strin
         } catch (error:any) {
             console.error("Polling error")
         }
+        await new Promise((resolve)=>setTimeout(resolve,delay))
     }
+    throw new Error("")
 }
 
 
