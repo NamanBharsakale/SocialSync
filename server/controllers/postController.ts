@@ -9,7 +9,7 @@ const pollLeonardoJob = async (generationId: string,apiKey:string):Promise<strin
     const delay = 5000;
 
 
-    for(let i ; i < maxRetries; i++){
+    for(let i=0; i < maxRetries; i++){
         try {
             const response = await axios.get(`https://cloud.leonardo.ai/api/rest/v1/generations/{generationId}`,{headers:{
                 accept: "application/json",authorization: `Bearer ${apiKey}`
@@ -26,8 +26,8 @@ const pollLeonardoJob = async (generationId: string,apiKey:string):Promise<strin
                 throw new Error("Leonardo.ai Generation failded.")
 
             }
-        } catch (error) {
-            
+        } catch (error:any) {
+            console.error("Polling error")
         }
     }
 }
@@ -110,7 +110,7 @@ export const generatePost = async (req:AuthRequest,res:Response):Promise<void>=>
                         }
                     )
                     const generationId = leoResponse.data.generate.generationId;
-                    const tempUrl = await
+                    const tempUrl = await pollLeonardoJob(generationId,leonardoKey);
                 }
 
             }
