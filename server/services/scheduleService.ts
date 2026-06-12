@@ -3,6 +3,7 @@ import { Post } from '../model/Posts.js';
 import { Account } from '../model/Account.js';
 import zernio from '../config/zernio.js';
 import { ActivityLog } from '../model/ActivityLog.js';
+import { platform } from 'node:os';
 
 
 
@@ -27,15 +28,15 @@ export const initScheduler = ()=>{
                         continue;
                    }
 
-                   const zernioPlatforms = accounts.map((acc)=>{
-                        tform: acc.platform as any;
+                   const zernioPlatforms = accounts.map((acc)=>({
+                        platform: acc.platform as any,
                         accountId: acc.zernioAccountId!
-                   })
+                   }))
 
                    const payload = {
                     content: post.content,
                     publishNow:true,
-                    ...(post.mediaUrl? {mediaItems: [{type:post.mediaType || "image",url:post.mediaUrl}:{}]})
+                    ...(post.mediaUrl ? {mediaItems: [{type: post.mediaType || "image", url: post.mediaUrl}]} : {}),
                     platforms:zernioPlatforms,
                 }
                 console.log(`Publishing post ${post._id} to zernio with media: ${post.mediaUrl || "none"}`)
@@ -63,7 +64,7 @@ export const initScheduler = ()=>{
                     relatedPost:post._id
                 })
                 } catch (error:any) {
-                      console.error(`Failed to publish post ${post._id} : `,err?.response?.data || err?.message);
+                      console.error(`Failed to publish post ${post._id} : `,error?.response?.data || error?.message);
                       post.status = "failed";
                       await post.save()
         

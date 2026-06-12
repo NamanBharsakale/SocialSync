@@ -1,42 +1,10 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware.js";
 import { GoogleGenAI } from "@google/genai";
-import axios from "axios";
 import { cloudinary } from "../config/cloudinary.js";
 import { Generation } from "../model/Generation.js";
 
 import { Post } from "../model/Posts.js";
-
-//Helper to poll leonardo.ai
-const pollLeonardoJob = async (generationId: string,apiKey:string):Promise<string>=>{
-    const maxRetries = 20;
-    const delay = 5000;
-
-
-    for(let i=0; i < maxRetries; i++){
-        try {
-            const response = await axios.get(`https://cloud.leonardo.ai/api/rest/v1/generations/{generationId}`,{headers:{
-                accept: "application/json",authorization: `Bearer ${apiKey}`
-            }})
-
-            const generation = response.data.generations_by_pk;
-            if(generation.status === "COMPLETE"){
-                if(generation.generated_images && generation.generated_images.length > 0){
-                    return generation.generated_images[0].url;
-                }
-                throw new Error("Generation complete but no images found.")
-            }
-            if(generation.status === "FAILED"){
-                throw new Error("Leonardo.ai Generation failded.")
-
-            }
-        } catch (error:any) {
-            console.error("Polling error")
-        }
-        await new Promise((resolve)=>setTimeout(resolve,delay))
-    }
-    throw new Error("")
-}
 
 
 
@@ -90,47 +58,31 @@ export const generatePost = async (req:AuthRequest,res:Response):Promise<void>=>
         let mediaUrl = "";
         if(generateImage){
             try{
-                const leonardoKey = process.env.LEONARDO_API_KEY;
-                if(leonardoKey){
-                    //use leonardo ai for image generaiton
-                    const leoResponse = await axios.post(
-                        "https://cloud.leonardo.ai/api/rest/v2/generations",
-                        {
-                            "public":false,
-                            "model":"gpt-image-2",
-                            "parameters":{
-                                "quality":"LOW",
-                                "prompt": imagePrompt,
-                                "quantity":1,
-                                "width":1024,
-                                "height":1024,
-                                "prompt_enhance":"OFF",
-                            },
+                // Pollinations AI — free, no API key required
+                const encodedPrompt = encodeURIComponent(imagePrompt);
+                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
 
-                        },{
-                            headers:{
-                                accept: "application/json",
-                                authorization: `Bearer ${leonardoKey}`,
-                                "content-type": "application/json",
-                            }
+                // Retry up to 4 times with exponential backoff (handles IP queue-full 402s)
+                let uploadResult: any = null;
+                for(let attempt = 0; attempt < 4; attempt++){
+                    try{
+                        uploadResult = await cloudinary.uploader.upload(pollinationsUrl, {
+                            folder: "ai-generations",
+                        });
+                        break;
+                    } catch(uploadErr: any){
+                        const is402 = uploadErr?.message?.includes("402");
+                        if(is402 && attempt < 3){
+                            await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
+                            continue;
                         }
-                    )
-                    const generationId = leoResponse.data.generate.generationId;
-                    const tempUrl = await pollLeonardoJob(generationId,leonardoKey);
-
-
-                    //Upload to cloudinary for persistance
-                    const uploadResult = await cloudinary.uploader.upload(tempUrl,{
-                        folder: "ai-generations",
-
-                    });
-
-                    mediaUrl = uploadResult.secure_url;
+                        throw uploadErr;
+                    }
                 }
-
+                if(uploadResult) mediaUrl = uploadResult.secure_url;
             }
             catch(error:any){
-                console.error("Image generation failed: ",err)
+                console.error("Image generation failed: ", error.message);
             }
         }
         //Save generation to DB

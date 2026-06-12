@@ -23,3 +23,12 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Claude Code internal workspace
+.claude/
+
+# Interview & prep notes (private)
+prepare/
+
+# Private deployment notes
+docs/deployment.md
