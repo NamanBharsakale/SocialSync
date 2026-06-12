@@ -83,6 +83,7 @@ function Schedular() {
       setScheduledDate("");
       setScheduledTime("");
       setSelectedPlatforms([]);
+      setMediaFile(null)
       fetchPosts();
     }
     catch(error:any){

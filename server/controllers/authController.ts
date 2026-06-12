@@ -67,8 +67,5 @@ export const loginUser = async (req:Request,res:Response):
     }
     catch(error:any){
         res.status(500).json({message:error?.message || "Invalid user data"})
-
+    }
 }
-
-
-

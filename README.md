@@ -7,7 +7,7 @@
 **Manage all your social media accounts from a single dashboard — schedule posts, generate AI content, and automate your workflow.**
 
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-61DAFB?style=for-the-badge&logo=react)
-![OpenAI](https://img.shields.io/badge/AI-OpenAI-412991?style=for-the-badge&logo=openai)
+![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=for-the-badge&logo=google)
 ![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=for-the-badge&logo=mongodb)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
@@ -30,7 +30,8 @@ This project demonstrates how to build a real-world AI SaaS application using th
 | 📊 **Unified Dashboard** | Manage all social media activity from a single interface |
 | 🔗 **Multi-Account Connect** | Link and manage multiple social media platforms |
 | 📅 **Post Scheduler** | Schedule posts for automatic future publication |
-| 🤖 **AI Content Generator** | Generate engaging, platform-optimized captions with OpenAI |
+| 🤖 **AI Content Generator** | Generate engaging, platform-optimized captions with Google Gemini |
+| 🎨 **AI Image Generator** | Generate post images automatically via Pollinations AI (free, no key needed) |
 | 🔐 **JWT Authentication** | Secure user registration, login, and protected routes |
 | 🎨 **Responsive UI** | Modern, mobile-friendly dashboard built with Tailwind CSS |
 
@@ -48,7 +49,7 @@ This project demonstrates how to build a real-world AI SaaS application using th
 - JWT (JSON Web Tokens), bcrypt.js
 
 **AI & Automation**
-- OpenAI API, Zernio API
+- Google Gemini API (text generation), Pollinations AI (image generation, free), Zernio API
 
 **Dev Tools**
 - CodeRabbit, Git & GitHub
@@ -65,7 +66,7 @@ Backend API (Node.js + Express.js)
         │
    ┌────┼────┐
    ▼    ▼    ▼
-MongoDB  OpenAI  Zernio API
+MongoDB  Gemini  Pollinations AI  Zernio API
                      │
                      ▼
           Social Media Platforms
@@ -109,7 +110,7 @@ SocialSync/
 
 - Node.js v18+
 - MongoDB (local or Atlas)
-- OpenAI API key
+- Google Gemini API key (free tier available)
 - Zernio API key
 
 ### 1. Clone the Repository
@@ -132,7 +133,7 @@ Create a `.env` file in the `backend/` directory:
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-OPENAI_API_KEY=your_openai_api_key
+GEMINI_API_KEY=your_gemini_api_key
 ZERNIO_API_KEY=your_zernio_api_key
 ```
 
@@ -163,10 +164,10 @@ User enters a topic
 Request sent to backend
         │
         ▼
-Backend calls OpenAI API
+Backend calls Google Gemini API
         │
         ▼
-AI generates optimized content
+AI generates optimized content + image prompt
         │
         ▼
 Content returned to dashboard
@@ -201,7 +202,7 @@ Create Post → Generate AI Content → Select Platforms
 ## 🗺️ Roadmap
 
 - [ ] Analytics Dashboard
-- [ ] AI Image Generation
+- [x] AI Image Generation (Pollinations AI)
 - [ ] Team Collaboration
 - [ ] Social Media Insights
 - [ ] Multi-workspace Support
@@ -231,7 +232,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 <div align="center">
 
-Built with ❤️ using the MERN Stack, OpenAI API, and Zernio API.
+Built with ❤️ using the MERN Stack, Google Gemini, Pollinations AI, and Zernio API.
 
 If you found this project useful, please ⭐ the repository!
 
