@@ -3,7 +3,7 @@ import SideBar from './SideBar'
 import { Outlet, useLocation } from 'react-router-dom';
 import { MenuIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
+import { Navigate } from 'react-router-dom';
 const pageTitles: Record<string,string> = {
   "/dashboard": "Dashboard",
   "/accounts":"Social Accounts",
