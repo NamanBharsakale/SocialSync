@@ -1,9 +1,9 @@
 import { FolderKanban, XIcon } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { dummyPostsData, PLATFORMS } from "../assets/assets";
 import api from "../api/axios";
 import toast from "react-hot-toast";
-
+import type { FormEvent } from "react";
 interface Post {
   _id: string;
   content: string;

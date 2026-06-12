@@ -1,5 +1,6 @@
 import { ActivityIcon, CheckCircleIcon, ClockIcon, SendIcon, Share2Icon, TrendingUpIcon } from "lucide-react"
 import { useEffect, useState } from "react"
+import api from "../api/axios";
 
 const Dashboard = () => {
 
@@ -8,10 +9,10 @@ const Dashboard = () => {
   const [activities,setActivities] = useState<any[]>([])
 
   useEffect(()=>{
-    const fetchDashboardData = async (params:type)=>{
+    const fetchDashboardData = async ()=>{
 
       try{
-        const [postRes,accountRes, activityRes] = await Promise.all([api.get("/api/post"),api.get("/api/accounts"),api.get("/api/activity")])
+        const [postRes,accountRes, activityRes] = await Promise.all([api.get("/api/posts"),api.get("/api/accounts"),api.get("/api/activity")])
         const posts = postRes.data;
         setStats({
           scheduled:posts.filter((p:any)=>p.status === 'scheduled').length,
@@ -106,7 +107,7 @@ const Dashboard = () => {
                         <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100">Published</span>
                         <span className="text-xs text-slate-400 shrink-0">{new Date(activity.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <p className="text-sm text-slate-600">{activities.description}</p>
+                      <p className="text-sm text-slate-600">{activity.description}</p>
                     </div>
                   </div>
 

@@ -1,6 +1,6 @@
 import { CalendarDaysIcon, LayoutDashboardIcon, UsersIcon, Wand2Icon, UserIcon, LogOutIcon } from 'lucide-react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-
+import { NavLink, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext';
 function SideBar({isOpen,setIsOpen}:{isOpen:boolean, setIsOpen: (val:boolean)=>void}) {
   
   // NOTE: No auth provider/hook found in this repo. If you have an auth hook (e.g. useAuth()),
