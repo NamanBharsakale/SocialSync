@@ -17,7 +17,7 @@ export default function Login() {
         e.preventDefault();
         setLoading(true);
         try {
-            const {data} = await api.post(`/api/auth${loginState?"login":"register"}`,{
+            const {data} = await api.post(`/api/auth/${loginState?"login":"register"}`,{
                 name,email,password
             })
             login(data,data.token)
