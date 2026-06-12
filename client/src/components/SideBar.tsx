@@ -4,13 +4,9 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 function SideBar({isOpen,setIsOpen}:{isOpen:boolean, setIsOpen: (val:boolean)=>void}) {
   
   // NOTE: No auth provider/hook found in this repo. If you have an auth hook (e.g. useAuth()),
-  // replace this mock with: const { logout, user } = useAuth()
-  const navigate = useNavigate()
-  const logout = () => {
-    // perform client-side navigation to sign-out route/home
-    navigate('/', { replace: true })
-  }
-  const user = { name: 'John Doe', email: 'johndoe@gmail.com' }
+  // replace this mock with: 
+  const { logout, user } = useAuth()
+  
 
 
   const location = useLocation();
