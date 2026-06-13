@@ -27,7 +27,7 @@ function Schedular() {
       const {data} = await api.get("/api/posts")
       setPosts(data)
     }
-    catch(error:any){
+    catch(error){
       toast.error(error?.response?.data?.message || error?.message )
 
     }

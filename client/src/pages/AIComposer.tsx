@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react"
-<<<<<<< HEAD
 import {  PLATFORMS } from "../assets/assets";
 import { ArrowRightIcon, CalendarIcon, HistoryIcon, Loader2Icon, TimerIcon, WandIcon, XIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api/axios";
-=======
-import { dummyGenerationData, PLATFORMS } from "../assets/assets";
-import { ArrowRightIcon, Calendar1Icon, CalendarIcon, HistoryIcon, Loader2Icon, TimerIcon, WandIcon, XIcon } from "lucide-react";
-import toast from "react-hot-toast";
-
->>>>>>> 5261ea0a3472352d46dbeeca4dad03f6867c6a58
 
 function AIComposer() {
 
@@ -31,11 +24,7 @@ function AIComposer() {
       const {data} = await api.get("api/posts/generations")
       setGenerations(data)
     } catch (error:any) {
-<<<<<<< HEAD
       toast.error(error?.response?.data?.message || error?.message);
-=======
-      toast.error(error?.response?.data?.message || error?.messsage);
->>>>>>> 5261ea0a3472352d46dbeeca4dad03f6867c6a58
     }
   }
 
@@ -51,21 +40,12 @@ function AIComposer() {
     setLoading(true)
     try{
       const {data} = await api.post("/api/posts/generate",{prompt,tone,generateImage})
-<<<<<<< HEAD
       setGenerations([data,...generations])
       setActiveSchedular(data)
       toast.success("Content geneerated")
     }
     catch(error:any){
       toast.error(error?.response?.data?.message || error?.message);
-=======
-      setGenerations({data,...generations})
-      setActiveScheduler(data)
-      toast.success("Content geneerated")
-    }
-    catch(error:any){
-      toast.error(error?.response?.data?.message || error?.messsage);
->>>>>>> 5261ea0a3472352d46dbeeca4dad03f6867c6a58
 
     }
     finally{
@@ -77,40 +57,23 @@ function AIComposer() {
     if(!activeSchedular){
       return;
     }
-<<<<<<< HEAD
     if(selectedPlatforms.length == 0){
       toast.error("Select at least one platform");
       return;
     }
     if(!scheduledDate || !scheduleTime){
-=======
-    if(selectedPplatforms.length == 0){
-      toast.error("Select at least one platform");
-      return;
-    }
-    if(!scheduledDate || !scheduledTime){
->>>>>>> 5261ea0a3472352d46dbeeca4dad03f6867c6a58
       toast.error("Select data and time");
       return;
     }
 
-<<<<<<< HEAD
     const scheduledFor = new Date(`${scheduledDate}T${scheduleTime} `).toISOString()
-=======
-    const scheduledFor = new Date(`${scheduleDate}T${scheduledTime} `).toISOString()
->>>>>>> 5261ea0a3472352d46dbeeca4dad03f6867c6a58
     setScheduling(true)
 
     try{
           await api.post("/api/posts",{
             content: activeSchedular.content,
-<<<<<<< HEAD
             mediaUrl: activeSchedular.mediaUrl,
             mediaType: activeSchedular.mediaType,
-=======
-            mediaUrl: activeScheduler.mediaUrl,
-            mediaType: activeScheduler.mediaType,
->>>>>>> 5261ea0a3472352d46dbeeca4dad03f6867c6a58
             platforms:selectedPlatforms,
             scheduledFor,
             status: "scheduled",
@@ -118,11 +81,7 @@ function AIComposer() {
           toast.success("AI Post Scheduled!")
           setActiveSchedular(null);
           setScheduledDate("");
-<<<<<<< HEAD
           setScheduleTime("");
-=======
-          setScheduledTime("");
->>>>>>> 5261ea0a3472352d46dbeeca4dad03f6867c6a58
           setSelectedPlatforms([]);
         }
         catch(error:any){

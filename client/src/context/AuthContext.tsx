@@ -32,11 +32,12 @@ export const AuthProvider : React.FC<{children:React.ReactNode}>= ({children})=>
         const storedUser = localStorage.getItem("user");
         const storedToken = localStorage.getItem("token");
         
-        if(storedUser){
+        if(storedUser && storedToken){
+            const parsedToken = storedToken.startsWith('"') ? JSON.parse(storedToken) : storedToken;
             setUser(JSON.parse(storedUser))
-            setToken(storedToken)
-            api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`
-        } 
+            setToken(parsedToken)
+            api.defaults.headers.common["Authorization"] = `Bearer ${parsedToken}`
+        }
         setIsLoading(false)  
     },[])
 
@@ -44,7 +45,7 @@ export const AuthProvider : React.FC<{children:React.ReactNode}>= ({children})=>
         setUser(userData)
         setToken(newToken)
         localStorage.setItem("user",JSON.stringify(userData))
-        localStorage.setItem("token",JSON.stringify(newToken))
+        localStorage.setItem("token",newToken)
         api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`
     }
     const logout = ()=>{
