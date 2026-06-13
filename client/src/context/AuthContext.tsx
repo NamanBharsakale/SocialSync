@@ -29,22 +29,33 @@ export const AuthProvider : React.FC<{children:React.ReactNode}>= ({children})=>
     const [isLoading,setIsLoading] = useState(true)
 
     useEffect(()=>{
-        const storedUser = localStorage.getItem("user");
-        const storedToken = localStorage.getItem("token");
-        
-        if(storedUser && storedToken){
-            const parsedToken = storedToken.startsWith('"') ? JSON.parse(storedToken) : storedToken;
-            setUser(JSON.parse(storedUser))
-            setToken(parsedToken)
-            api.defaults.headers.common["Authorization"] = `Bearer ${parsedToken}`
+        try {
+            const storedUser = localStorage.getItem("user");
+            const storedToken = localStorage.getItem("token");
+
+            if(storedUser && storedToken && storedToken !== "undefined" && storedToken !== "null"){
+                const parsedToken = storedToken.startsWith('"') ? JSON.parse(storedToken) : storedToken;
+                const parsedUser = JSON.parse(storedUser);
+                setUser({_id: parsedUser._id, name: parsedUser.name, email: parsedUser.email})
+                setToken(parsedToken)
+                api.defaults.headers.common["Authorization"] = `Bearer ${parsedToken}`
+            } else {
+                localStorage.removeItem("token")
+                localStorage.removeItem("user")
+            }
+        } catch {
+            localStorage.removeItem("token")
+            localStorage.removeItem("user")
+        } finally {
+            setIsLoading(false)
         }
-        setIsLoading(false)  
     },[])
 
     const login = (userData:User,newToken:string)=>{
-        setUser(userData)
+        const cleanUser: User = {_id: userData._id, name: userData.name, email: userData.email}
+        setUser(cleanUser)
         setToken(newToken)
-        localStorage.setItem("user",JSON.stringify(userData))
+        localStorage.setItem("user",JSON.stringify(cleanUser))
         localStorage.setItem("token",newToken)
         api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`
     }

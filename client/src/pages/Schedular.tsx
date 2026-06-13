@@ -4,6 +4,7 @@ import { dummyPostsData, PLATFORMS } from "../assets/assets";
 import api from "../api/axios";
 import toast from "react-hot-toast";
 import type { FormEvent } from "react";
+
 interface Post {
   _id: string;
   content: string;
@@ -21,33 +22,63 @@ function Schedular() {
   const [selectedPlatforms,setSelectedPlatforms] = useState<string[]>([]);
   const [mediaFile,setMediaFile] = useState<File | null>(null);
   const [loading,setLoading] = useState(false);
+  const [connectedPlatforms,setConnectedPlatforms] = useState<string[]>([]);
+  const [mediaPreviewUrl,setMediaPreviewUrl] = useState<string | null>(null);
 
   const fetchPosts = async ()=>{
     try{
       const {data} = await api.get("/api/posts")
       setPosts(data)
     }
-    catch(error){
+    catch(error: any){
       toast.error(error?.response?.data?.message || error?.message )
+    }
+  }
 
+  const fetchConnectedPlatforms = async ()=>{
+    try{
+      const {data} = await api.get("/api/accounts")
+      setConnectedPlatforms(
+        data
+          .filter((a: any) => a.status === "connected")
+          .map((a: any) => a.platform)
+      )
+    }
+    catch{
+      // silently ignore — validation will still block unconnected platforms
     }
   }
 
   useEffect(()=>{
-    (async ()=> await fetchPosts())();
-    const interval = setInterval(async ()=>await fetchPosts(),1000 );
+    (async ()=>{
+      await fetchPosts();
+      await fetchConnectedPlatforms();
+    })();
+    // 10 s is sufficient — post status changes on the order of seconds-to-minutes,
+    // and 1 s hammered the DB with 2 queries/s per open tab.
+    const interval = setInterval(()=>fetchPosts(), 10_000);
     return ()=>clearInterval(interval)
   },[])
 
-
-
-
+  // Create a stable Blob URL for the media preview and revoke the previous one
+  // on change so the browser doesn't accumulate unreleased object URLs.
+  useEffect(()=>{
+    if(!mediaFile){ setMediaPreviewUrl(null); return; }
+    const url = URL.createObjectURL(mediaFile);
+    setMediaPreviewUrl(url);
+    return ()=>URL.revokeObjectURL(url);
+  },[mediaFile])
 
 
   const scheduled = posts.filter((p) => p.status === "scheduled");
   const published = posts.filter((p)=>p.status === "published")
-  
+
   const togglePlatform = (id:string)=>{
+    if(!connectedPlatforms.includes(id)){
+      const label = PLATFORMS.find(p=>p.id===id)?.name || id;
+      toast.error(`${label} is not connected. Connect it first in Accounts.`);
+      return;
+    }
     setSelectedPlatforms((prev)=>(prev.includes(id)?prev.filter((p)=>p!==id):[...prev,id]))
   }
 
@@ -62,11 +93,19 @@ function Schedular() {
       return;
     }
 
-    if(selectedPlatforms.includes('instagram') &&!mediaFile ){
+    const disconnected = selectedPlatforms.filter(p => !connectedPlatforms.includes(p));
+    if(disconnected.length > 0){
+      const names = disconnected.map(id=>PLATFORMS.find(p=>p.id===id)?.name || id).join(", ");
+      toast.error(`These platforms are not connected: ${names}`);
+      return;
+    }
+
+    if(selectedPlatforms.includes('instagram') && !mediaFile){
       toast.error("Instagram requires an image or video");
       return;
     }
-    const scheduledFor = new Date(`${scheduledDate}${scheduledTime}`).toISOString();
+
+    const scheduledFor = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
     const formData = new FormData();
     formData.append("content",content);
     formData.append("scheduledFor",scheduledFor)
@@ -83,7 +122,8 @@ function Schedular() {
       setScheduledDate("");
       setScheduledTime("");
       setSelectedPlatforms([]);
-      setMediaFile(null)
+      setMediaFile(null);
+      setMediaPreviewUrl(null);
       fetchPosts();
     }
     catch(error:any){
@@ -93,10 +133,10 @@ function Schedular() {
       setLoading(false)
     }
   }
-  
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-full">
-      {/**Compose Panle */}
+      {/**Compose Panel */}
       <div className="w-full lg:w-[460px] shrink-0">
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <div className="flex items-center gap-2 mb-6">
@@ -104,7 +144,7 @@ function Schedular() {
             </div>
 
             <form className="space-y-5" onSubmit={handleSchedule}>
-                {/**Platformms */}
+                {/**Platforms */}
 
                 <div>
                   <label className="block text-xs text-slate-500 uppercase mb-2">
@@ -114,14 +154,28 @@ function Schedular() {
                   <div className="flex flex-wrap gap-3">
                     {PLATFORMS.map((p)=>{
                       const active = selectedPlatforms.includes(p.id);
+                      const isConnected = connectedPlatforms.includes(p.id);
                       return (
                         <button key={p.id} type="button" onClick={()=>togglePlatform(p.id)}
-                        className={`flex items-center gap-1.5 p-3 rounded-md border transition-all duration-150 ${active ? "bg-red-50 border-red-300 text-red-500 scale-103":"border-slate-200 text-slate-500 hover:border-slate-300"}`} >
+                        title={!isConnected ? `${p.name} not connected` : p.name}
+                        className={`relative flex items-center gap-1.5 p-3 rounded-md border transition-all duration-150 ${
+                          active
+                            ? "bg-red-50 border-red-300 text-red-500 scale-103"
+                            : isConnected
+                            ? "border-slate-200 text-slate-500 hover:border-slate-300"
+                            : "border-slate-200 text-slate-300 cursor-not-allowed opacity-50"
+                        }`} >
                           <p.icon className="size-4.5" />
+                          {!isConnected && (
+                            <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-amber-400 border border-white" />
+                          )}
                         </button>
                       )
                     })}
                   </div>
+                  <p className="text-xs text-slate-400 mt-1.5">
+                    Dimmed platforms are not connected.
+                  </p>
                 </div>
 
 
@@ -152,12 +206,12 @@ function Schedular() {
                       <label className="block text-xs text-slate-500 uppercase mb-2">
                         Media (optional)
                       </label>
-                      {mediaFile ? (
+                      {mediaFile && mediaPreviewUrl ? (
                         <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                           {mediaFile.type.startsWith("image/")
-                           ?<img src={URL.createObjectURL(mediaFile)} 
-                          alt="preview" className="w-full h-40 object-cover"/> 
-                          : <video src={URL.createObjectURL(mediaFile)} className="w-full h-40 object-cover" 
+                           ?<img src={mediaPreviewUrl}
+                          alt="preview" className="w-full h-40 object-cover"/>
+                          : <video src={mediaPreviewUrl} className="w-full h-40 object-cover"
                           controls/>}
                           <button onClick={()=>setMediaFile(null)} className="absolute top-2 right-2 size-7 bg-slate-900/60
                           hover:bg-slate-900/80 text-white rounded-full flex items-center

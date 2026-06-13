@@ -33,6 +33,8 @@ This project demonstrates how to build a real-world AI SaaS application using th
 | 🤖 **AI Content Generator** | Generate engaging, platform-optimized captions with Google Gemini |
 | 🎨 **AI Image Generator** | Generate post images automatically via Pollinations AI (free, no key needed) |
 | 🔐 **JWT Authentication** | Secure user registration, login, and protected routes |
+| 🔑 **Password Reset** | Forgot-password email flow with secure tokenized reset links (Gmail SMTP) |
+| 🔒 **Account Isolation** | Each user's social accounts are strictly scoped — no cross-user data leakage |
 | 🎨 **Responsive UI** | Modern, mobile-friendly dashboard built with Tailwind CSS |
 
 ---
@@ -46,7 +48,7 @@ This project demonstrates how to build a real-world AI SaaS application using th
 - Node.js, Express.js, MongoDB, Mongoose
 
 **Auth & Security**
-- JWT (JSON Web Tokens), bcrypt.js
+- JWT (JSON Web Tokens), bcrypt.js, Nodemailer + Gmail SMTP (transactional email)
 
 **AI & Automation**
 - Google Gemini API (text generation), Pollinations AI (image generation, free), Zernio API
@@ -78,28 +80,28 @@ MongoDB  Gemini  Pollinations AI  Zernio API
 
 ```
 SocialSync/
-├── frontend/
+├── client/                     # React + Vite frontend (TypeScript)
 │   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── hooks/
-│       ├── services/
-│       ├── context/
-│       └── App.jsx
+│       ├── api/                # Axios instance
+│       ├── assets/             # Platform definitions, static images
+│       ├── components/         # Layout, Sidebar, Modals, Home sections
+│       ├── context/            # AuthContext (JWT state)
+│       ├── pages/              # Dashboard, Accounts, Scheduler, AIComposer,
+│       │                       #   Login, ResetPassword
+│       └── App.tsx             # Route tree
 │
-├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   ├── utils/
-│   └── server.js
+├── server/                     # Express + TypeScript backend
+│   ├── config/                 # DB, Cloudinary, Multer, Zernio, Mailer
+│   ├── controllers/            # authController, postController, ...
+│   ├── middlewares/            # JWT protect guard
+│   ├── model/                  # User, Account, Posts, Generation, ActivityLog
+│   ├── routes/                 # authRoutes, postRoutes, accountRoutes, ...
+│   ├── services/               # scheduleService (node-cron)
+│   └── server.ts               # Entry point
 │
-├── .env
+├── docs/                       # Architecture, flows, deployment notes
 ├── README.md
-└── package.json
+└── .gitignore
 ```
 
 ---
@@ -123,19 +125,29 @@ cd socialsync
 ### 2. Backend Setup
 
 ```bash
-cd backend
+cd server
 npm install
 ```
 
-Create a `.env` file in the `backend/` directory:
+Create a `.env` file in the `server/` directory:
 
 ```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-GEMINI_API_KEY=your_gemini_api_key
-ZERNIO_API_KEY=your_zernio_api_key
+PORT=3000
+MONGODB_URL=your_mongodb_atlas_connection_string
+JWT_SECRET=your_random_32_char_secret
+
+GEMINI_API_KEY=your_google_ai_studio_key
+ZERNIO_API_KEY=your_zernio_key
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+
+EMAIL_USER=your_gmail@gmail.com
+EMAIL_PASS=your_gmail_app_password
 ```
+
+> `EMAIL_USER` / `EMAIL_PASS` power the forgot-password email. Generate a Gmail App Password at myaccount.google.com → Security → 2-Step Verification → App Passwords.
 
 Start the backend server:
 
@@ -146,7 +158,7 @@ npm run dev
 ### 3. Frontend Setup
 
 ```bash
-cd frontend
+cd client
 npm install
 npm run dev
 ```

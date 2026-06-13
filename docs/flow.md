@@ -14,7 +14,7 @@ POST /api/auth/login
 authController: validate email/password (bcrypt.compare)
         │
         ▼
-Sign JWT (7d expiry) → return { token, user }
+Sign JWT (30d expiry) → return { _id, name, email, token }
         │
         ▼
 Client stores token in localStorage
@@ -94,7 +94,7 @@ schedulePost controller:
 Server starts → initScheduler()
         │
         ▼
-node-cron runs every minute
+node-cron runs every second ("* * * * * *")
         │
         ▼
 scheduleService: query Post where status="scheduled"
@@ -110,36 +110,57 @@ For each due post:
 
 ---
 
-## 5. Social Account Connect / Disconnect Flow
+## 5. Social Account Connect / Sync / Disconnect Flow
 
 ```
 Connect:
-  User clicks "Connect [Platform]"
+  User clicks "Connect [Platform]" in PlatformPickerModal
         │
         ▼
-  POST /api/accounts/connect  { platform }
+  GET /api/oauth/:platform/url
         │
         ▼
-  accountController → Zernio: create OAuth URL
+  socialAuthController:
+    getOrCreateZernioProfile(user)  ← creates profile on first connect, stores ID on User
+    zernio.connect.getConnectUrl({ platform, redirectUrl })
         │
         ▼
-  Return authUrl → client opens OAuth popup / redirect
+  Return { authUrl } → client redirects user to Zernio/platform OAuth page
         │
         ▼
-  OAuth callback → /api/oauth/[platform]/callback
+  User authorizes on the platform → Zernio stores tokens internally
         │
         ▼
-  socialAuthController: exchange code → access token
-  Account.create({ user, platform, accessToken, username })
+  User lands back on /accounts page
+
+Sync (after OAuth redirect):
+  GET /api/oauth/sync
         │
         ▼
-  Client refreshes account list
+  socialAuthController:
+    listAccounts from Zernio for this profile
+    For each account:
+      normalize platform name via platformMap
+      Account.findOneAndUpdate(
+        { zernioAccountId, user: req.user._id },   ← user filter prevents
+        { ...fields },                              ←   overwriting another
+        { upsert: true }                            ←   user's account
+      )
+        │
+        ▼
+  Return synced accounts array → client updates state
+
+  Security: getOrCreateZernioProfile() always creates a NEW Zernio profile
+  for users who don't have one yet. It no longer calls listProfiles() as a
+  fallback, which previously returned profiles shared across all users of the
+  same API key and caused cross-user account leakage.
 
 Disconnect:
   DELETE /api/accounts/:id
         │
         ▼
-  Account.findByIdAndDelete → Zernio revoke token
+  If account.zernioAccountId: call Zernio API to revoke
+  Account.findByIdAndDelete
 ```
 
 ---
@@ -165,6 +186,114 @@ Stored in Post.mediaUrl + Post.mediaType
 
 ---
 
+## 7. Forgot Password / Reset Password Flow
+
+```
+Step 1 — Request reset link
+  User clicks "Forgot password?" on Login page
+  Enters email → clicks "Send reset link"
+        │
+        ▼
+  POST /api/auth/forgot-password  { email }
+        │
+        ▼
+  authController: forgotPassword()
+    User.findOne({ email })
+
+    if user not found:
+      → respond 200 with same generic message (anti-enumeration)
+
+    Throttle check:
+      if resetPasswordExpires > (now + 59 min):
+        → 429 "please wait 60 seconds"
+
+    Generate token:
+      rawToken  = crypto.randomBytes(32).toString("hex")   ← sent in email link
+      hashToken = sha256(rawToken)                          ← stored in DB
+    
+    user.resetPasswordToken   = hashToken
+    user.resetPasswordExpires = now + 1 hour
+    user.save()
+
+    Send email via Nodemailer (Gmail SMTP):
+      To: user.email
+      Link: {client origin}/reset-password/{rawToken}
+
+    → respond 200 with same generic message
+        │
+        ▼
+  Client shows "Check your inbox" screen
+  Resend link available after 60-second cooldown
+
+---
+
+Step 2 — Set new password
+  User clicks link in email → lands on /reset-password/:rawToken
+        │
+        ▼
+  POST /api/auth/reset-password/:rawToken  { password }
+        │
+        ▼
+  authController: resetPassword()
+    hashToken = sha256(rawToken)
+    User.findOne({
+      resetPasswordToken: hashToken,
+      resetPasswordExpires: { $gt: now }     ← rejects expired tokens
+    })
+
+    if not found:
+      → 400 "Reset link is invalid or has expired"
+
+    bcrypt.hash(password, 10) → user.password
+    user.resetPasswordToken   = undefined
+    user.resetPasswordExpires = undefined
+    user.save()
+
+    → 200 "Password updated successfully"
+        │
+        ▼
+  Client shows success screen → "Go to Sign In" button
+```
+
+**Security notes:**
+- Only the SHA-256 hash is stored in the database; the raw token lives only in the email link and never touches the DB — so a DB breach cannot be used to reset passwords.
+- The throttle (60s) prevents email flooding.
+- The anti-enumeration pattern (same response whether email exists or not) prevents attackers from probing which emails are registered.
+- Token expires in 1 hour; cleared from DB immediately after use.
+
+---
+
+## 8. Schedule Modal (AIComposer)
+
+```
+User clicks "Schedule Post" on a generation card
+        │
+        ▼
+setActiveSchedular(gen) → modal renders (activeSchedular is truthy)
+
+User fills platforms + date + time → clicks "Schedule Post" button
+        │
+        ├── success path:
+        │     post created → toast.success
+        │     setActiveSchedular(null) → modal closes
+        │     form fields reset
+        │
+        └── error path:
+              toast.error → modal stays open so user can retry
+
+User clicks backdrop (area outside modal)
+        │
+        ▼
+backdrop onClick → setActiveSchedular(null) → modal closes
+
+User clicks ✕ button
+        │
+        ▼
+setActiveSchedular(null) → modal closes
+```
+
+---
+
 ## Error Handling Summary
 
 | Layer | Strategy |
@@ -173,4 +302,5 @@ Stored in Post.mediaUrl + Post.mediaType
 | Validation | 400 with descriptive message |
 | Image gen failure | Silent catch — post saved without image |
 | Scheduler failure | ActivityLog entry with status "failed" |
+| Account sync cross-user | upsert filter includes `user` — silently skips |
 | Global | Express error middleware → 500 |

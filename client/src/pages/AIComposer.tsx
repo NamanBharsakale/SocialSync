@@ -211,10 +211,16 @@ function AIComposer() {
 
       {/**Schedular Modal */}
       {activeSchedular && (
-        <div className="fixed inset-0 min-h-screen z-50 flex items-center justify-center 
-        p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl border 
-          border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          className="fixed inset-0 min-h-screen z-50 flex items-center justify-center
+          p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300"
+          onClick={() => setActiveSchedular(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl border
+            border-slate-100 overflow-hidden flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-8 py-4 border-b border-slate-100 bg-slate-50/30">
               <h3 className="text-slate-900">Schedule generations</h3>
               <button onClick={()=>setActiveSchedular(null)}

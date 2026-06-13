@@ -6,7 +6,7 @@ const accountSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    platforms: {
+    platform: {
         type:String,
         enum: ["twitter","linkedin","facebook","instagram","facebook_page","linkedin_page","instagram_business"],
         required:true

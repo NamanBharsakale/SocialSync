@@ -3,17 +3,20 @@ import { Post } from '../model/Posts.js';
 import { Account } from '../model/Account.js';
 import zernio from '../config/zernio.js';
 import { ActivityLog } from '../model/ActivityLog.js';
-import { platform } from 'node:os';
-
-
-
 export const initScheduler = ()=>{
     cron.schedule("* * * * * *",async()=>{
         try{
             const now = new Date();
-            const postsToPublish = await Post.find({status:"scheduled",scheduleFor: {$lte:now}});
+            // Atomically claim posts by moving them to "processing" so concurrent
+            // ticks never double-publish the same post.
+            const postsToPublish = await Post.find({status:"scheduled",scheduledFor: {$lte:now}});
+            for (const p of postsToPublish){
+                await Post.updateOne({_id:p._id,status:"scheduled"},{$set:{status:"processing"}});
+            }
+            const claimedIds = postsToPublish.map(p=>p._id);
+            const claimed = await Post.find({_id:{$in:claimedIds},status:"processing"});
 
-            for (const post of postsToPublish){
+            for (const post of claimed){
                 try {
                    const accounts = await Account.find({
                     user:post.user,
@@ -25,6 +28,8 @@ export const initScheduler = ()=>{
 
                    if(accounts.length === 0){
                         console.log(`No connected Zernio accounts found for post ${post._id}`);
+                        post.status = "failed";
+                        await post.save();
                         continue;
                    }
 
@@ -70,8 +75,8 @@ export const initScheduler = ()=>{
         
                 }
             }
-            if(postsToPublish.length > 0){
-                console.log(`Evaluated ${postsToPublish.length} posts at ${now.toISOString()}`);
+            if(claimed.length > 0){
+                console.log(`Evaluated ${claimed.length} posts at ${now.toISOString()}`);
             }
         }
         catch(error:any){

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { timeStamp } from "node:console";
 
 const userSchema = new mongoose.Schema({
     email: {
@@ -17,6 +16,12 @@ const userSchema = new mongoose.Schema({
     },
     zernioProfileId:{
         type: String
+    },
+    resetPasswordToken:{
+        type: String
+    },
+    resetPasswordExpires:{
+        type: Date
     }
 },{timestamps: true});
 

@@ -1,4 +1,4 @@
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PLATFORMS } from "../assets/assets";
 import AccountList from "../components/AccountList";
@@ -17,6 +17,7 @@ function Accounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const connectedIds = accounts.map((a) => a.platform);
 
@@ -93,6 +94,12 @@ function Accounts() {
     }
   }, []);
 
+  const handleSync = async () => {
+    setSyncing(true);
+    await fetchAccounts(true, null, "Accounts synced successfully");
+    setSyncing(false);
+  };
+
   const handleConnect = async (platformId: string) => {
     setConnecting(platformId);
 
@@ -146,15 +153,28 @@ function Accounts() {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowPlatformPicker(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-red-500
-          hover:bg-red-600 text-white rounded-full font-medium
-          transition-all w-full sm:w-auto justify-center"
-        >
-          <PlusIcon className="size-4" />
-          Connect Account
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2.5 border border-slate-300
+            hover:bg-slate-50 text-slate-700 rounded-full font-medium
+            transition-all w-full sm:w-auto justify-center disabled:opacity-50"
+          >
+            <RefreshCwIcon className={`size-4 ${syncing ? "animate-spin" : ""}`} />
+            Sync
+          </button>
+
+          <button
+            onClick={() => setShowPlatformPicker(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-red-500
+            hover:bg-red-600 text-white rounded-full font-medium
+            transition-all w-full sm:w-auto justify-center"
+          >
+            <PlusIcon className="size-4" />
+            Connect Account
+          </button>
+        </div>
       </div>
 
       {/* Platform Picker Modal */}

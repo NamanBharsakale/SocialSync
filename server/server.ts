@@ -11,36 +11,33 @@ import { initScheduler } from "./services/scheduleService.js";
 
 const app = express();
 
-//db connection
-await connectDB()
-
-//global error handler
-app.use((err:any,_req:Request,res:Response,_next: NextFunction)=>{
-    console.error(err)
-    res.status(500).send(err?.response?.data?.message)
-})
-
-// Middleware
-app.use(cors())
+// Middleware — must come before routes
+app.use(cors());
 app.use(express.json());
+
+//db connection
+await connectDB();
 
 const port = process.env.PORT || 3000;
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
     res.send('Server is Live!');
 });
 
-app.use("/api/auth",authRouter)
-app.use("/api/oauth",socialAuthRouter)
-app.use('/api/accounts',accountRouter);
-app.use("/api/posts",postRouter);
-app.use("/api/activity",activityRouter)
+app.use("/api/auth", authRouter);
+app.use("/api/oauth", socialAuthRouter);
+app.use('/api/accounts', accountRouter);
+app.use("/api/posts", postRouter);
+app.use("/api/activity", activityRouter);
 
+// Global error handler — must be LAST, after all routes
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(err);
+    res.status(500).json({ message: err?.message || "Internal server error" });
+});
 
-//initialize schedular
-initScheduler()
-
-
+//initialize scheduler
+initScheduler();
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);

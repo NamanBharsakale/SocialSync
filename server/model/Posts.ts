@@ -17,17 +17,17 @@ const postSchema = new mongoose.Schema({
         type:String,
         enum: ["image","video"]
     },
-    platform:[{
+    platforms:[{
         type:String,
-        enum:["twitter","linkedin","facebook","instagram","facebook_page","linkdin_page","instagram_business"]
+        enum:["twitter","linkedin","facebook","instagram","facebook_page","linkedin_page","instagram_business"]
     }],
-    scheduleFor:{
+    scheduledFor:{
         type:Date,
         required:true,
     },
     status:{
         type:String,
-        enum:["draft","scheduled","published","failed"],
+        enum:["draft","scheduled","processing","published","failed"],
         default:"scheduled"
     }
     

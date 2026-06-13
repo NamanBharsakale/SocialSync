@@ -4,18 +4,13 @@ import { User } from "../model/User";
 import { Account } from "../model/Account.js";
 import { AuthRequest } from "../middlewares/authMiddleware.js";
 const getOrCreateZernioProfile = async (user:any):Promise<string>=>{
+    // Reuse the stored profile ID — avoids hitting the wrong profile on re-fetch
+    if(user.zernioProfileId) return user.zernioProfileId as string;
+
     try {
-        const result = await zernio.profiles.listProfiles()
-        const data = result.data as any;
-        const profiles: any[] = Array.isArray(data)?data:data?.profiles || data?.data || [];
-
-        if(profiles.length > 0){
-            const pid = profiles[0]._id || profiles[0].id
-            await User.findByIdAndUpdate(user._id,{zernioProfileId:pid})
-            return pid;
-        
-        }   
-
+        // Always create a new profile — never reuse another user's profile.
+        // listProfiles() returns profiles across the shared API key and would
+        // hand user B the profile belonging to user A.
         const createResult = await zernio.profiles.createProfile({
             body:{name:`${user.name || user.email}'s workspace`} as any
         })
@@ -79,48 +74,63 @@ export const syncsAccounts = async (req:AuthRequest,res:Response):Promise<void>=
     try{
         const profileId = await getOrCreateZernioProfile(req.user);
         const result = await zernio.accounts.listAccounts({
-            query: {profileId} as any
+            query: {profileId, status: "connected"} as any
         })
 
         const data = result.data as any
-        const zernioAccounts: any[] = data?.accounts || (Array.isArray(data)?data:[]);
-        const supportedPlatforms = ["twitter","linkedin","facebook","instagram"];
+        console.log("listAccounts raw response:", JSON.stringify(data, null, 2));
+
+        const zernioAccounts: any[] = data?.accounts || (Array.isArray(data) ? data : []);
+
+        const platformMap: Record<string, string> = {
+            twitter: "twitter",
+            linkedin: "linkedin",
+            linkedinads: "linkedin",
+            facebook: "facebook",
+            metaads: "facebook",
+            instagram: "instagram",
+        };
         const syncedAccounts = [];
 
         for(const zAccount of zernioAccounts){
+            console.log("Processing zAccount:", JSON.stringify(zAccount, null, 2));
+
             const zid = zAccount._id || zAccount.id;
             if(!zid){
                 console.warn("Skipping account with no ID", zAccount);
                 continue;
             }
-            const rawPlatform = (zAccount.platforms || zAccount.type || "").toLowerCase();
-            const normalizedPlatforms = supportedPlatforms.find((p) => 
-                rawPlatform.includes(p)
-            );
-            if(!normalizedPlatforms){
-                console.warn(`Skipping unsupported platform "${rawPlatform}"`);
+
+            if(zAccount.enabled === false){
+                console.log(`Skipping disabled account ${zid}`);
                 continue;
             }
 
+            const rawPlatform = (zAccount.platform || "").toLowerCase();
+            const normalizedPlatform = platformMap[rawPlatform];
+
+            if(!normalizedPlatform){
+                console.warn(`Skipping unsupported platform "${rawPlatform}" for account ${zid}`);
+                continue;
+            }
 
             const account = await Account.findOneAndUpdate(
-                {zernioAccountId:zid},
+                {zernioAccountId: zid, user: req.user._id},
                 {
-                    user:req.user._id,
-                    platform:normalizedPlatforms,
-                    handle: zAccount.username || zAccount.name || zAccount.handle || "Unknown",
-                    zernioAccountId:zid,
-                    status:"connected",
-                    avatarUrl: zAccount.avatarUrl || zAccount.picture || zAccount.profile_image_url,
-
+                    user: req.user._id,
+                    platform: normalizedPlatform,
+                    handle: zAccount.username || zAccount.displayName || zAccount.name || "Unknown",
+                    zernioAccountId: zid,
+                    status: "connected",
+                    avatarUrl: zAccount.profilePicture || zAccount.avatarUrl || zAccount.picture || null,
                 },
                 {
-                    upsert:true,
-                    returnDocument:'after'
+                    upsert: true,
+                    new: true,
+                    setDefaultsOnInsert: true,
                 }
             )
             syncedAccounts.push(account)
-        
         }
         res.json(syncedAccounts)
     }

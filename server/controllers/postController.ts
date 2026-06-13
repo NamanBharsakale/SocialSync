@@ -123,9 +123,9 @@ export const getGenerations = async (req:AuthRequest,res:Response):Promise<void>
 //GET /api/posts
 export const getPosts = async (req:AuthRequest,res:Response):Promise<void>=>{
     try {
-        const posts = await Post.find({user: req.user_id})
+        const posts = await Post.find({user: req.user._id})
         res.json(posts)
-    } catch (error) {
+    } catch (error: any) {
         res.status(500).json({
             message: error?.message || "Server Error"
         })
@@ -179,7 +179,7 @@ export const schedulePost = async (req:AuthRequest,res:Response):Promise<void>=>
 
         res.status(201).json(post)
 
-    } catch (error) {
+    } catch (error: any) {
         res.status(500).json({
             message: error?.message || "Server Error"
         })

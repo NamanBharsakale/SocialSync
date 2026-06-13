@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Schedular from "./pages/Schedular";
@@ -15,6 +16,7 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route element={<Layout/>}>
                     <Route path="/dashboard" element={<Dashboard/>}/>
                     <Route path="/accounts" element={<Accounts/>}/>
