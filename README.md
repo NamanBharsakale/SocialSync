@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 SocialSync
+# 🚀 SocialSync 
 
 ### AI-Powered Social Media Automation Platform
 
