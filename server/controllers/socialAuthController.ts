@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import zernio from "../config/zernio";
-import { User } from "../model/User";
+import zernio from "../config/zernio.js";
+import { User } from "../model/User.js";
 import { Account } from "../model/Account.js";
 import { AuthRequest } from "../middlewares/authMiddleware.js";
 const getOrCreateZernioProfile = async (user:any):Promise<string>=>{

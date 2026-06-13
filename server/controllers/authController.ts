@@ -156,7 +156,7 @@ export const resetPassword = async (req:Request,res:Response):Promise<void>=>{
             return;
         }
 
-        const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+        const hashedToken = crypto.createHash("sha256").update(String(req.params.token)).digest("hex");
 
         const user = await User.findOne({
             resetPasswordToken: hashedToken,
