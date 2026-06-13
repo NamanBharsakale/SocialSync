@@ -12,7 +12,9 @@ import { initScheduler } from "./services/scheduleService.js";
 const app = express();
 
 // Middleware — must come before routes
-app.use(cors());
+app.use(cors({
+    origin:process.env.FRONTEND_URL
+}));
 app.use(express.json());
 
 //db connection
