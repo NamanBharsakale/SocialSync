@@ -172,45 +172,51 @@ export const syncsAccounts = async (
                 continue;
             }
 
-            const account = await prisma.account.upsert({
-                where: {
-                    userId_zernioAccountId: {
-                        userId: req.user.id,
-                        zernioAccountId: zid,
-                    },
-                },
-                update: {
-                    userId: req.user.id,
-                    platform: normalizedPlatform as any,
-                    handle:
-                        zAccount.username ||
-                        zAccount.displayName ||
-                        zAccount.name ||
-                        "Unknown",
-                    status: "connected",
-                    avatarUrl:
-                        zAccount.profilePicture ||
-                        zAccount.avatarUrl ||
-                        zAccount.picture ||
-                        null,
-                },
-                create: {
-                    userId: req.user.id,
-                    platform: normalizedPlatform as any,
-                    handle:
-                        zAccount.username ||
-                        zAccount.displayName ||
-                        zAccount.name ||
-                        "Unknown",
-                    zernioAccountId: zid,
-                    status: "connected",
-                    avatarUrl:
-                        zAccount.profilePicture ||
-                        zAccount.avatarUrl ||
-                        zAccount.picture ||
-                        null,
-                },
-            });
+            const existingAccount = await prisma.account.findFirst({
+    where: {
+        userId: req.user.id,
+        zernioAccountId: zid,
+    },
+});
+
+const account = existingAccount
+    ? await prisma.account.update({
+          where: {
+              id: existingAccount.id,
+          },
+          data: {
+              platform: normalizedPlatform as any,
+              handle:
+                  zAccount.username ||
+                  zAccount.displayName ||
+                  zAccount.name ||
+                  "Unknown",
+              status: "connected",
+              avatarUrl:
+                  zAccount.profilePicture ||
+                  zAccount.avatarUrl ||
+                  zAccount.picture ||
+                  null,
+          },
+      })
+    : await prisma.account.create({
+          data: {
+              userId: req.user.id,
+              platform: normalizedPlatform as any,
+              handle:
+                  zAccount.username ||
+                  zAccount.displayName ||
+                  zAccount.name ||
+                  "Unknown",
+              zernioAccountId: zid,
+              status: "connected",
+              avatarUrl:
+                  zAccount.profilePicture ||
+                  zAccount.avatarUrl ||
+                  zAccount.picture ||
+                  null,
+          },
+      });
 
             syncedAccounts.push(account);
         }
