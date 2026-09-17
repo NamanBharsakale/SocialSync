@@ -1,7 +1,139 @@
 generator client {
   provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Platform {
+  twitter
+  linkedin
+  facebook
+  instagram
+  facebook_page
+  linkedin_page
+  instagram_business
+}
+
+enum MediaType {
+  image
+  video
+}
+
+enum PostStatus {
+  draft
+  scheduled
+  processing
+  published
+  failed
+}
+
+enum AccountStatus {
+  connected
+  disconnected
+}
+
+enum ActivityActionType {
+  POSY_PUBLISHED
+  AI_REPLY
+}
+
+model User {
+  id                   String    @id @default(uuid()) @db.Uuid
+  email                String    @unique
+  password             String
+  name                 String
+  zernioProfileId      String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+
+  accounts     Account[]
+  posts        Post[]
+  generations  Generation[]
+  activityLogs ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @db.Uuid
+  platform        Platform
+  handle          String
+  zernioAccountId String?
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  status          AccountStatus @default(connected)
+  avatarUrl       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([platform])
+}
+
+model Post {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @db.Uuid
+  content      String
+  mediaUrl     String?
+  mediaType    MediaType?
+  platforms    Platform[]
+  scheduledFor DateTime
+  status       PostStatus @default(scheduled)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityLogs ActivityLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([scheduledFor])
+  @@index([status])
+}
+
+model Generation {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @db.Uuid
+  prompt    String
+  content   String
+  mediaUrl  String?
+  mediaType MediaType?
+  tone      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id              String             @id @default(uuid()) @db.Uuid
+  userId          String             @db.Uuid
+  actionType      ActivityActionType
+  description     String
+  relatedPostId   String?            @db.Uuid
+  platform        String?
+  aiGeneratedText String?
+
+  user        User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relatedPost Post? @relation(fields: [relatedPostId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([relatedPostId])
+  @@index([createdAt])
 }
