@@ -10,10 +10,25 @@ import activityRouter from "./routes/activityRoutes.js";
 import { initScheduler } from "./services/scheduleService.js";
 
 const app = express();
+const normalizeOrigin = (value?: string) => value?.replace(/\/$/, "");
+const allowedOrigins = new Set(
+    [
+        normalizeOrigin(process.env.FRONTEND_URL),
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ].filter((origin): origin is string => Boolean(origin))
+);
 
 // Middleware — must come before routes
 app.use(cors({
-    origin:process.env.FRONTEND_URL
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.has(normalizeOrigin(origin) ?? origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error(`CORS blocked for origin ${origin}`));
+    }
 }));
 app.use(express.json());
 

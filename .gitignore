@@ -33,3 +33,4 @@ prepare/
 # Private deployment notes
 docs/deployment.md
 docs/qna.md
+req.md
