@@ -4,17 +4,13 @@
 
 ### AI-Powered Social Media Automation Platform
 
-**Connect all your social accounts, generate AI content, schedule posts, and publish automatically — from one clean dashboard.**
+**Centralized multi-tenant platform for connecting social accounts, scheduling posts via a persistent cron-backed job queue, and generating AI content — all from a single dashboard.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20App-red?style=for-the-badge)](https://social-sync-topaz-omega.vercel.app/)
-[![GitHub](https://img.shields.io/badge/GitHub-NamanBharsakale-181717?style=for-the-badge&logo=github)](https://github.com/NamanBharsakale/SocialSync)
-
-![React](https://img.shields.io/badge/React%2019-61DAFB?style=flat-square&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express%205-000000?style=flat-square&logo=express)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![MERN Stack](https://img.shields.io/badge/Stack-MERN-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=for-the-badge&logo=typescript)
+![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=for-the-badge&logo=google)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=for-the-badge&logo=mongodb)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 </div>
 
@@ -22,108 +18,81 @@
 
 ## Overview
 
-Managing multiple social media accounts is time-consuming and error-prone. SocialSync solves this by giving you a single platform to connect accounts, generate AI-written content, schedule posts, and publish them automatically across LinkedIn, Instagram, Twitter, and more.
+Managing multiple social media accounts is time-consuming and repetitive. SocialSync solves this with a centralized, multi-tenant platform: connect accounts, schedule posts against a persistent job store, and generate AI-powered captions and images — all from one dashboard.
 
-> **Deployed at:** [social-sync-topaz-omega.vercel.app](https://social-sync-topaz-omega.vercel.app/)
+The system is a **stateless Express REST API** backed by MongoDB, with a **`node-cron` scheduler** that polls for due posts and dispatches them to social platforms via the Zernio publishing API. Every request is authenticated with JWTs and every data access is scoped per-user for strict tenant isolation. AI content is generated through Google Gemini (text) and Pollinations AI (images), decoupled from the publishing pipeline so generation failures never block scheduling.
 
 ---
 
-## Features
+## ✨ Features
 
-### Authentication & Security
-- **Email / Password Registration & Login** — full sign-up and sign-in flow with JWT-based sessions (30-day expiry)
-- **Forgot Password** — secure, time-limited reset link sent to email via Gmail SMTP; link expires in 1 hour
-- **Rate-Limited Reset Tokens** — cannot request a new reset link for 60 seconds after the previous one is issued (429 throttle)
-- **Host-Header Injection Protection** — reset URLs are built from a trusted `CLIENT_URL` env var, not from the `Origin` header
-- **JWT in-memory / localStorage** — token stored securely; all routes guarded by a `protect` middleware that validates the token and checks the user still exists in the database
-
-### Dashboard
-- **Unified Activity Feed** — see all recent posts, statuses, and account activity at a glance
-- **Connected Accounts Overview** — quick snapshot of every linked social profile
-- **Quick Actions** — jump straight to the Scheduler or AI Composer from the dashboard
-
-### Social Account Management
-- **OAuth via Zernio** — connect Instagram, LinkedIn, Twitter/X, and other platforms with one click
-- **Manual Sync** — instantly refresh your connected accounts list from Zernio with a single button
-- **Per-User Isolation** — social accounts are strictly scoped to the logged-in user; no cross-user data leakage
-- **Profile Caching** — Zernio profile ID is cached after first fetch to avoid redundant API calls
-
-### Post Scheduler
-- **Multi-Platform Scheduling** — select one or more platforms for a single post
-- **Date & Time Picker** — pick an exact publish date and time
-- **Media Attachments** — upload images or video files; previews rendered with automatic Blob URL cleanup (no memory leaks)
-- **Draft & Schedule Modes** — save a post as a draft or queue it for automatic publishing
-- **Post Status Tracking** — every post moves through `scheduled → processing → published / failed` states, visible in the UI
-
-### Automated Publishing
-- **Node-cron Scheduler** — a background cron job runs every minute to check for posts whose `scheduledFor` time has passed
-- **Atomic Claim Pattern** — posts are transitioned to `processing` before publishing begins, preventing double-publishing in concurrent runs
-- **Multi-Platform Dispatch** — each post is published to every selected platform via the Zernio API in a single scheduled run
-- **Failure Handling** — posts with no connected accounts or failed API calls are marked `failed` (never silently dropped)
-
-### AI Composer
-- **Text Generation (Google Gemini)** — enter a topic and select a tone (Professional, Creative, Funny, Minimalist, Excited); Gemini `gemini-2.5-flash` generates a platform-optimized caption with relevant hashtags
-- **AI Image Generation (Pollinations AI)** — optionally generate a matching image for the post using Pollinations AI — free, no API key required
-- **Cloudinary Storage** — generated images are fetched as a buffer and uploaded to Cloudinary so they're reliably stored and served
-- **Generation History** — all past AI generations are saved and displayed in the Recents grid; any generation can be re-scheduled with one click
-- **One-Click Schedule** — generated content flows directly into the schedule modal without copy-pasting
-
-### Media Handling
-- **Cloudinary Integration** — all uploaded and AI-generated media is stored in Cloudinary and served via CDN
-- **Multer Memory Storage** — files are streamed directly to Cloudinary without writing to disk
-- **Blob URL Lifecycle** — media previews use `URL.createObjectURL` with `useEffect` cleanup on unmount/change, preventing browser memory leaks
-
-### UI & Responsiveness
-- **React 19 + React Compiler** — built on the latest React with the Babel compiler plugin for automatic memoization
-- **Tailwind CSS** — fully responsive layout that adapts from mobile to widescreen
-- **Framer Motion-ready** — enter/exit animations on page transitions
-- **Toast Notifications** — `react-hot-toast` for real-time success and error feedback
-- **Lucide React Icons** — consistent, accessible icon set throughout the UI
+| Feature | Description |
+|---|---|
+| 📊 **Unified Dashboard** | Single-pane view of connected accounts, scheduled queue, and activity log |
+| 🔗 **Multi-Account Connect** | Link multiple platforms; credentials/tokens persisted per-account and per-user |
+| 📅 **Persistent Scheduler** | `node-cron` worker polls MongoDB for due posts and publishes them — survives restarts (state lives in DB, not memory) |
+| 🤖 **AI Content Generator** | Platform-optimized captions via Google Gemini with structured prompt templates |
+| 🎨 **AI Image Generator** | On-demand image generation via Pollinations AI (keyless), URLs persisted to Cloudinary |
+| 🔐 **JWT Authentication** | Stateless auth with signed tokens, bcrypt-hashed passwords, route-level `protect` middleware |
+| 🔑 **Password Reset** | Tokenized reset flow: hashed single-use token + TTL expiry, delivered over Gmail SMTP |
+| 🔒 **Tenant Isolation** | Every query filtered by `userId` from the JWT — no cross-user reads/writes |
+| 📝 **Activity Logging** | Immutable audit trail of publish attempts, successes, and failures |
+| 🎨 **Responsive UI** | React + Vite + Tailwind, mobile-first dashboard |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS, React Router v7 |
-| Backend | Node.js (LTS), Express 5, TypeScript |
-| Database | MongoDB Atlas, Mongoose 9 |
-| Authentication | JWT (30-day), bcrypt, HttpOnly-safe tokens |
-| Email | Nodemailer + Gmail SMTP (App Password) |
-| AI — Text | Google Gemini API (`gemini-2.5-flash`) |
-| AI — Image | Pollinations AI (free, URL-based, no key required) |
-| Media Storage | Cloudinary (upload_stream) |
-| Social OAuth | Zernio API |
-| Scheduler | node-cron |
-| Testing | Vitest 4, @vitest/coverage-v8 |
-| Deployment | Vercel (frontend), MongoDB Atlas (DB) |
+**Frontend**
+- React.js (Vite, TypeScript), Tailwind CSS, React Router, Axios (interceptor-based token injection)
+
+**Backend**
+- Node.js, Express.js (TypeScript), MongoDB, Mongoose (schema-level validation + indexes)
+
+**Auth & Security**
+- JWT (HS256), bcrypt.js (salted hashing), Nodemailer + Gmail SMTP, hashed TTL reset tokens
+
+**AI & Automation**
+- Google Gemini API (text generation), Pollinations AI (keyless image generation), Zernio API (cross-platform publishing), `node-cron` (scheduled dispatch)
+
+**Storage & Media**
+- Cloudinary (image CDN + transforms), Multer (multipart upload handling)
+
+**Dev Tools**
+- CodeRabbit (AI review), ESLint, Git & GitHub
 
 ---
 
 ## Architecture
 
 ```
-Browser (React 19 + Vite)
-         │
-         │  HTTPS / REST + JSON
-         ▼
-  Express 5 API Server (Node.js + TypeScript)
-  ┌─────────────────────────────────────────┐
-  │  Auth Middleware (JWT verify + DB check) │
-  │  Routes → Controllers → Services        │
-  └──────┬───────────────┬──────────────────┘
-         │               │
-    ┌────┴────┐    ┌──────┴──────┐
-    │ MongoDB │    │  node-cron  │ ← every minute
-    │  Atlas  │    │  Scheduler  │
-    └─────────┘    └──────┬──────┘
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-         Zernio API   Cloudinary   Gemini /
-         (publish)    (media)      Pollinations
+┌─────────────────────────────────────────────┐
+│         Client (React + Vite + TS)           │
+│   Axios interceptor → Bearer <JWT>           │
+└───────────────────────┬─────────────────────┘
+                        │ HTTPS / REST
+                        ▼
+┌─────────────────────────────────────────────┐
+│      Express REST API (stateless, TS)        │
+│  ┌────────────┐  ┌──────────────────────┐    │
+│  │ protect MW │→ │ Controllers          │    │
+│  │  (JWT)     │  │ auth / post / account│    │
+│  └────────────┘  └──────────┬───────────┘    │
+│                             │                 │
+│  ┌──────────────────────────▼──────────────┐ │
+│  │ scheduleService (node-cron worker)       │ │
+│  │  poll due posts → publish → log result   │ │
+│  └──────────────────────────┬──────────────┘ │
+└─────────┬─────────┬─────────┬────────────────┘
+          ▼         ▼         ▼
+     ┌────────┐ ┌───────┐ ┌──────────┐
+     │MongoDB │ │Gemini │ │ Zernio   │──▶ Social Platforms
+     └────────┘ └───────┘ └──────────┘
+          ▲         ▲
+     Cloudinary  Pollinations AI
 ```
+
+The scheduler is **decoupled** from the request/response path: users create posts synchronously, but publication happens asynchronously when the cron worker finds a post whose `scheduledAt <= now` and `status === 'pending'`.
 
 ---
 
@@ -133,58 +102,43 @@ Browser (React 19 + Vite)
 SocialSync/
 ├── client/                       # React + Vite frontend
 │   └── src/
-│       ├── api/                  # Axios instance (baseURL from env)
-│       ├── assets/               # Platform configs, static assets
-│       ├── components/
-│       │   ├── Home/             # Landing page sections
-│       │   ├── Layout.tsx        # App shell
-│       │   └── SideBar.tsx       # Navigation
-│       ├── context/
-│       │   └── AuthContext.tsx   # JWT state, login/logout
-│       ├── pages/
-│       │   ├── Home.tsx          # Landing page
-│       │   ├── Login.tsx         # Login + Register (toggled)
-│       │   ├── Dashboard.tsx     # Activity overview
-│       │   ├── Accounts.tsx      # Social account management
-│       │   ├── Schedular.tsx     # Post scheduler
-│       │   ├── AIComposer.tsx    # AI content + image generator
-│       │   └── ResetPassword.tsx # Password reset via token
-│       └── App.tsx               # Route tree
+│       ├── api/                # Axios instance + auth interceptor
+│       ├── assets/             # Platform definitions, static images
+│       ├── components/         # Layout, Sidebar, Modals, Home sections
+│       ├── context/            # AuthContext (JWT state, token persistence)
+│       ├── pages/              # Dashboard, Accounts, Scheduler, AIComposer,
+│       │                       #   Login, ResetPassword
+│       └── App.tsx             # Route tree + protected route guards
 │
-├── server/                       # Express + TypeScript backend
-│   ├── config/
-│   │   ├── db.ts                 # MongoDB connection
-│   │   ├── cloudinary.ts         # Cloudinary v2 config
-│   │   ├── mailer.ts             # Nodemailer (Gmail SMTP)
-│   │   ├── multer.ts             # Memory-storage upload
-│   │   └── zernio.ts             # Zernio client init
-│   ├── controllers/
-│   │   ├── authController.ts     # Register, login, forgot/reset password
-│   │   ├── postController.ts     # CRUD, AI generation, scheduling
-│   │   ├── accountsController.ts # Fetch + sync Zernio accounts
-│   │   └── socialAuthController.ts # Zernio OAuth + publish
-│   ├── middlewares/
-│   │   └── authMiddleware.ts     # JWT protect guard
-│   ├── model/
-│   │   ├── User.ts               # Users (bcrypt password, reset token)
-│   │   ├── Account.ts            # Connected social accounts
-│   │   ├── Posts.ts              # Scheduled / published posts
-│   │   ├── Generation.ts         # AI generation history
-│   │   └── ActivityLog.ts        # Audit / activity feed
-│   ├── routes/                   # Express routers
-│   ├── services/
-│   │   └── scheduleService.ts    # node-cron auto-publish job
-│   ├── tests/                    # Vitest unit tests (31 passing)
-│   └── server.ts                 # Entry point + global error handler
+├── server/                     # Express + TypeScript backend
+│   ├── config/                 # DB, Cloudinary, Multer, Zernio, Mailer
+│   ├── controllers/            # authController, postController, ...
+│   ├── middlewares/            # JWT protect guard, error handler
+│   ├── model/                  # User, Account, Posts, Generation, ActivityLog
+│   ├── routes/                 # authRoutes, postRoutes, accountRoutes, ...
+│   ├── services/               # scheduleService (node-cron dispatch loop)
+│   └── server.ts               # Entry point (DB connect → cron start → listen)
 │
-├── docs/                         # Architecture, flow, test report, Q&A
-├── screenshots.md                # Visual walkthrough
-└── README.md
+├── docs/                       # Architecture, data-flow, deployment notes
+├── README.md
+└── .gitignore
 ```
 
 ---
 
-## Getting Started (Local)
+## 🗃️ Data Model
+
+| Collection | Key Fields | Notes |
+|---|---|---|
+| **User** | `email` (unique index), `password` (bcrypt), `resetTokenHash`, `resetTokenExpiry` | Reset token stored hashed, never in plaintext |
+| **Account** | `userId` (FK), `platform`, `credentials/tokens` | Compound index on `(userId, platform)` for tenant-scoped lookups |
+| **Posts** | `userId`, `content`, `imageUrl`, `platforms[]`, `scheduledAt`, `status` | `status`: `pending → published \| failed`; indexed on `(status, scheduledAt)` for the cron poll |
+| **Generation** | `userId`, `prompt`, `output`, `type` | Persists AI generations for reuse/audit |
+| **ActivityLog** | `userId`, `action`, `postId`, `result`, `timestamp` | Append-only audit trail |
+
+---
+
+## ⚙️ Getting Started
 
 ### Prerequisites
 - Node.js v18+
@@ -213,7 +167,8 @@ Create `server/.env`:
 ```env
 PORT=3000
 MONGODB_URL=your_mongodb_atlas_connection_string
-JWT_SECRET=your_32_char_random_secret
+JWT_SECRET=your_random_32_char_secret
+JWT_EXPIRES_IN=7d
 
 GEMINI_API_KEY=your_google_ai_studio_key
 ZERNIO_API_KEY=your_zernio_api_key
@@ -251,68 +206,80 @@ VITE_API_BASE_URL=http://localhost:3000
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
-
-### 4. Run Tests
-
-```bash
-cd server
-npm test              # 31 unit tests
-npm run test:coverage # with v8 coverage report
-```
+The app will be available at `http://localhost:5173`.
 
 ---
 
-## AI Generation Flow
+## 🔐 Authentication Flow
 
 ```
-User enters topic + selects tone
-            │
-            ▼
-POST /api/posts/generate
-            │
-            ▼
-Gemini gemini-2.5-flash
-  → returns JSON { content, imagePrompt }
-            │
-            ▼
-  [if AI Image enabled]
-  fetch buffer from Pollinations AI
-  → stream upload to Cloudinary
-  → store secure_url as mediaUrl
-            │
-            ▼
-Generation saved to MongoDB
-            │
-            ▼
-Returned to UI → appears in Recents grid
-            │
-            ▼
-User clicks "Schedule Post" → picks platforms + date/time
-            │
-            ▼
-POST /api/posts  (status: "scheduled")
+Register → bcrypt.hash(password) → persist User
+Login    → bcrypt.compare → jwt.sign({ userId }, SECRET, { expiresIn })
+Request  → Axios interceptor attaches Bearer token
+           → protect MW: jwt.verify → req.user = { userId }
+           → controller scopes every query by req.user.userId
+
+Forgot password → generate raw token → store SHA-256 hash + TTL
+                → email raw token via Gmail SMTP
+Reset           → hash incoming token → match + check expiry
+                → bcrypt.hash(newPassword) → invalidate token
 ```
+
+Reset tokens are **single-use** and stored hashed, so a database leak never exposes usable reset links.
 
 ---
 
-## Auto-Publish Flow
+## 🤖 AI Content Generation Flow
 
 ```
-node-cron fires every minute
+User enters topic
         │
         ▼
-Find posts where scheduledFor ≤ now AND status = "scheduled"
+POST /api/ai/generate  (JWT protected)
         │
         ▼
-Atomically set status = "processing"  (prevents double-publish)
+Backend builds structured prompt → Google Gemini API
+        │
+        ├──▶ caption text
+        └──▶ image prompt → Pollinations AI → Cloudinary upload
         │
         ▼
-For each claimed post:
-  → fetch user's connected accounts from MongoDB
-  → call Zernio API for each selected platform
-  → set status = "published" or "failed"
+Generation persisted (userId, prompt, output)
+        │
+        ▼
+Returned to dashboard → user edits → schedules → publishes
 ```
+
+Text and image generation are independent calls, so an image failure still returns usable caption text.
+
+---
+
+## 🔄 Scheduling & Publishing Pipeline
+
+```
+Create Post (status: pending, scheduledAt: T)
+        │
+        ▼
+node-cron tick (every minute)
+        │
+        ▼
+Query: { status: 'pending', scheduledAt: { $lte: now } }
+        │
+        ▼
+For each due post → Zernio API publish per platform
+        │
+   ┌────┴────┐
+   ▼         ▼
+success    failure
+   │         │
+   ▼         ▼
+status:published   status:failed
+        │
+        ▼
+Append ActivityLog entry
+```
+
+Because due-post state lives in MongoDB (not an in-memory timer), scheduled jobs survive server restarts and horizontal restarts pick up exactly where they left off.
 
 ---
 
@@ -320,32 +287,38 @@ For each claimed post:
 
 | Layer | Platform |
 |---|---|
-| Frontend | **Vercel** |
-| Backend | Render / Railway (any Node.js host) |
-| Database | **MongoDB Atlas** |
-| Media | **Cloudinary** |
+| Frontend | Vercel, Netlify |
+| Backend | Render, Railway, VPS |
+| Database | MongoDB Atlas |
+| Media | Cloudinary |
 
-Set the same env vars from the local setup in your hosting platform's environment settings. Set `CLIENT_URL` to your Vercel frontend URL on the backend, and `VITE_API_BASE_URL` to your backend URL on the frontend.
+> **Note:** run a single scheduler instance (or add a distributed lock / `findOneAndUpdate` atomic claim) to avoid double-publishing when scaling the API horizontally.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
-- [x] JWT Authentication (register, login, forgot/reset password)
-- [x] Social account connect via Zernio OAuth
-- [x] Multi-platform post scheduling
-- [x] Automated publishing with node-cron
-- [x] AI text generation (Google Gemini)
-- [x] AI image generation (Pollinations AI)
-- [x] Cloudinary media storage
-- [x] Activity logs
-- [x] Unit test suite (Vitest — 31 tests)
-- [ ] Analytics dashboard
-- [ ] Team / multi-user workspace
-- [ ] Post performance insights
-- [ ] Subscription & billing (Stripe)
-- [ ] AI content A/B optimization
-- [ ] Browser extension for quick scheduling
+- [ ] Analytics Dashboard
+- [x] AI Image Generation (Pollinations AI)
+- [ ] Team Collaboration
+- [ ] Social Media Insights
+- [ ] Multi-workspace Support
+- [ ] Subscription & Payment (Stripe)
+- [ ] Content Performance Tracking
+- [ ] AI Content Optimization
+- [ ] Distributed scheduler with atomic job claiming (multi-instance safe)
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add your feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
 
 ---
 
@@ -357,7 +330,7 @@ Set the same env vars from the local setup in your hosting platform's environmen
 
 <div align="center">
 
-Built with the MERN stack · Google Gemini · Pollinations AI · Zernio · Cloudinary
+Built with ❤️ using the MERN Stack, TypeScript, Google Gemini, Pollinations AI, and Zernio API.
 
 If this project helped you, please ⭐ the repository!
 
