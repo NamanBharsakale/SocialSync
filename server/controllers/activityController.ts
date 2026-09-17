@@ -1,22 +1,35 @@
-
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware.js";
-import { ActivityLog } from "../model/ActivityLog.js";
+import { prisma } from "../config/prisma.js";
 
-
-
-
-//Get all activvyt
-//GET /api/activity
-export const getActivity = async (req:AuthRequest,res:Response):Promise<void>=>{
+// Get all activity
+// GET /api/activity
+export const getActivity = async (
+    req: AuthRequest,
+    res: Response
+): Promise<void> => {
     try {
-        const activity = await ActivityLog.find({user:req.user._id}).sort({createdAt: -1}).limit(10).populate("relatedPost","content")
-        
+        const activity = await prisma.activityLog.findMany({
+            where: {
+                userId: req.user.id,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            take: 10,
+            include: {
+                relatedPost: {
+                    select: {
+                        content: true,
+                    },
+                },
+            },
+        });
 
-        res.json(activity)
-    
-    
-    } catch (error:any) {
-        res.status(500).json({ message: error?.message || "Server error"})
+        res.json(activity);
+    } catch (error: any) {
+        res.status(500).json({
+            message: error?.message || "Server error",
+        });
     }
-}
+};
