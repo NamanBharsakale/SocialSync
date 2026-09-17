@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express, { NextFunction, Request, Response } from 'express';
 import cors from "cors";
-import connectDB from "./config/db.js";
 import authRouter from "./routes/authRoutes.js";
 import socialAuthRouter from "./routes/socialAuthRoutes.js";
 import accountRouter from "./routes/accountRoutes.js";
@@ -32,8 +31,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-//db connection
-await connectDB();
 
 const port = process.env.PORT || 3000;
 
