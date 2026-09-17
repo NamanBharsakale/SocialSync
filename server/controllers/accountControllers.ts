@@ -57,9 +57,11 @@ export const disconnectAccount = async (
     res: Response
 ): Promise<void> => {
     try {
+        const accountId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
         const account = await prisma.account.findFirst({
             where: {
-                id: req.params.id,
+                id: accountId,
                 userId: req.user.id,
             },
         });

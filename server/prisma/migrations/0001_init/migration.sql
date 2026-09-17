@@ -14,7 +14,7 @@ CREATE TYPE "PostStatus" AS ENUM ('draft', 'scheduled', 'processing', 'published
 CREATE TYPE "AccountStatus" AS ENUM ('connected', 'disconnected');
 
 -- CreateEnum
-CREATE TYPE "ActivityActionType" AS ENUM ('POSY_PUBLISHED', 'AI_REPLY');
+CREATE TYPE "ActivityActionType" AS ENUM ('POST_PUBLISHED', 'AI_REPLY');
 
 -- CreateTable
 CREATE TABLE "User" (
