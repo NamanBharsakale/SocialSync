@@ -14,110 +14,129 @@ interface Post {
 }
 
 function Schedular() {
+  const [posts, setPosts] = useState<Post[]>(dummyPostsData);
+  const [content, setContent] = useState("");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
 
-  const [posts,setPosts] = useState<Post[]>(dummyPostsData);
-  const [content,setContent] = useState("");
-  const [scheduledDate,setScheduledDate] = useState("");
-  const [scheduledTime,setScheduledTime] = useState("");
-  const [selectedPlatforms,setSelectedPlatforms] = useState<string[]>([]);
-  const [mediaFile,setMediaFile] = useState<File | null>(null);
-  const [loading,setLoading] = useState(false);
-  const [connectedPlatforms,setConnectedPlatforms] = useState<string[]>([]);
-  const [mediaPreviewUrl,setMediaPreviewUrl] = useState<string | null>(null);
-
-  const fetchPosts = async ()=>{
-    try{
-      const {data} = await api.get("/api/posts")
-      setPosts(data)
+  const fetchPosts = async () => {
+    try {
+      const { data } = await api.get("/api/posts");
+      setPosts(data);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error?.message);
     }
-    catch(error: any){
-      toast.error(error?.response?.data?.message || error?.message )
-    }
-  }
+  };
 
-  const fetchConnectedPlatforms = async ()=>{
-    try{
-      const {data} = await api.get("/api/accounts")
+  const fetchConnectedPlatforms = async () => {
+    try {
+      const { data } = await api.get("/api/accounts");
       setConnectedPlatforms(
         data
           .filter((a: any) => a.status === "connected")
-          .map((a: any) => a.platform)
-      )
-    }
-    catch{
+          .map((a: any) => a.platform),
+      );
+    } catch {
       // silently ignore — validation will still block unconnected platforms
     }
-  }
+  };
 
-  useEffect(()=>{
-    (async ()=>{
+  useEffect(() => {
+    (async () => {
       await fetchPosts();
       await fetchConnectedPlatforms();
     })();
     // 10 s is sufficient — post status changes on the order of seconds-to-minutes,
     // and 1 s hammered the DB with 2 queries/s per open tab.
-    const interval = setInterval(()=>fetchPosts(), 10_000);
-    return ()=>clearInterval(interval)
-  },[])
+    const interval = setInterval(() => fetchPosts(), 10_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Create a stable Blob URL for the media preview and revoke the previous one
   // on change so the browser doesn't accumulate unreleased object URLs.
-  useEffect(()=>{
-    if(!mediaFile){ setMediaPreviewUrl(null); return; }
+  useEffect(() => {
+    if (!mediaFile) {
+      setMediaPreviewUrl(null);
+      return;
+    }
     const url = URL.createObjectURL(mediaFile);
     setMediaPreviewUrl(url);
-    return ()=>URL.revokeObjectURL(url);
-  },[mediaFile])
-
+    return () => URL.revokeObjectURL(url);
+  }, [mediaFile]);
 
   const scheduled = posts.filter((p) => p.status === "scheduled");
-  const published = posts.filter((p)=>p.status === "published")
+  const published = posts.filter((p) => p.status === "published");
 
-  const togglePlatform = (id:string)=>{
-    if(!connectedPlatforms.includes(id)){
-      const label = PLATFORMS.find(p=>p.id===id)?.name || id;
+  const togglePlatform = (id: string) => {
+    if (!connectedPlatforms.includes(id)) {
+      const label = PLATFORMS.find((p) => p.id === id)?.name || id;
       toast.error(`${label} is not connected. Connect it first in Accounts.`);
       return;
     }
-    setSelectedPlatforms((prev)=>(prev.includes(id)?prev.filter((p)=>p!==id):[...prev,id]))
-  }
+    setSelectedPlatforms((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    );
+  };
 
   const handleSchedule = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if(selectedPlatforms.length === 0){
+    if (selectedPlatforms.length === 0) {
       toast.error("Select at least one platform");
       return;
     }
-    if(!scheduledDate || !scheduledTime){
+    if (!scheduledDate || !scheduledTime) {
       toast.error("Select date and time");
       return;
     }
 
-    const disconnected = selectedPlatforms.filter(p => !connectedPlatforms.includes(p));
-    if(disconnected.length > 0){
-      const names = disconnected.map(id=>PLATFORMS.find(p=>p.id===id)?.name || id).join(", ");
+    const disconnected = selectedPlatforms.filter(
+      (p) => !connectedPlatforms.includes(p),
+    );
+    if (disconnected.length > 0) {
+      const names = disconnected
+        .map((id) => PLATFORMS.find((p) => p.id === id)?.name || id)
+        .join(", ");
       toast.error(`These platforms are not connected: ${names}`);
       return;
     }
 
-    if(selectedPlatforms.includes('instagram') && !mediaFile){
+    if (selectedPlatforms.includes("instagram") && !mediaFile) {
       toast.error("Instagram requires an image or video");
       return;
     }
 
-    const scheduledFor = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+    const dateTime = new Date(`${scheduledDate}T${scheduledTime}:00`);
+
+    if (Number.isNaN(dateTime.getTime())) {
+      toast.error("Please select a valid date and time.");
+      return;
+    }
+
+    if (dateTime.getTime() <= Date.now()) {
+      toast.error("Please select a future date and time.");
+      return;
+    }
+
+    const scheduledFor = dateTime.toISOString();
     const formData = new FormData();
-    formData.append("content",content);
-    formData.append("scheduledFor",scheduledFor)
-    formData.append("status","scheduled")
-    formData.append("platforms",JSON.stringify(selectedPlatforms))
+    formData.append("content", content);
+    formData.append("scheduledFor", scheduledFor);
+    formData.append("status", "scheduled");
+    formData.append("platforms", JSON.stringify(selectedPlatforms));
 
-    if(mediaFile) formData.append("media",mediaFile);
+    if (mediaFile) formData.append("media", mediaFile);
 
-    setLoading(true)
-    try{
-      await api.post("/api/posts",formData,{headers:{"Content-Type":"multipart/form-data"}})
-      toast.success("Post Scheduled!")
+    setLoading(true);
+    try {
+      await api.post("/api/posts", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Post Scheduled!");
       setContent("");
       setScheduledDate("");
       setScheduledTime("");
@@ -125,147 +144,166 @@ function Schedular() {
       setMediaFile(null);
       setMediaPreviewUrl(null);
       fetchPosts();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
     }
-    catch(error:any){
-      toast.error(error?.response?.data?.message || error.message)
-    }
-    finally{
-      setLoading(false)
-    }
-  }
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-full">
       {/**Compose Panel */}
       <div className="w-full lg:w-[460px] shrink-0">
         <div className="bg-white rounded-2xl border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <h2 className="text-lg text-slate-700">Compose Post</h2>
-            </div>
+          <div className="flex items-center gap-2 mb-6">
+            <h2 className="text-lg text-slate-700">Compose Post</h2>
+          </div>
 
-            <form className="space-y-5" onSubmit={handleSchedule}>
-                {/**Platforms */}
+          <form className="space-y-5" onSubmit={handleSchedule}>
+            {/**Platforms */}
 
-                <div>
-                  <label className="block text-xs text-slate-500 uppercase mb-2">
-                    Platforms
-                  </label>
+            <div>
+              <label className="block text-xs text-slate-500 uppercase mb-2">
+                Platforms
+              </label>
 
-                  <div className="flex flex-wrap gap-3">
-                    {PLATFORMS.map((p)=>{
-                      const active = selectedPlatforms.includes(p.id);
-                      const isConnected = connectedPlatforms.includes(p.id);
-                      return (
-                        <button key={p.id} type="button" onClick={()=>togglePlatform(p.id)}
-                        title={!isConnected ? `${p.name} not connected` : p.name}
-                        className={`relative flex items-center gap-1.5 p-3 rounded-md border transition-all duration-150 ${
-                          active
-                            ? "bg-red-50 border-red-300 text-red-500 scale-103"
-                            : isConnected
+              <div className="flex flex-wrap gap-3">
+                {PLATFORMS.map((p) => {
+                  const active = selectedPlatforms.includes(p.id);
+                  const isConnected = connectedPlatforms.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => togglePlatform(p.id)}
+                      title={!isConnected ? `${p.name} not connected` : p.name}
+                      className={`relative flex items-center gap-1.5 p-3 rounded-md border transition-all duration-150 ${
+                        active
+                          ? "bg-red-50 border-red-300 text-red-500 scale-103"
+                          : isConnected
                             ? "border-slate-200 text-slate-500 hover:border-slate-300"
                             : "border-slate-200 text-slate-300 cursor-not-allowed opacity-50"
-                        }`} >
-                          <p.icon className="size-4.5" />
-                          {!isConnected && (
-                            <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-amber-400 border border-white" />
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1.5">
-                    Dimmed platforms are not connected.
-                  </p>
-                </div>
-
-
-                {/**Content */}
-                    <div>
-                      <label className="block text-xs text-slate-500 uppercase mb-2">
-                        Content
-                      </label>
-                      <textarea
-                        required
-                        rows={5}
-                        placeholder="What do you want to share today?"
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm placeholder-slate-400 outline-none resize-none"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                      />
-                      <div
-                        className={`text-right text-xs mt-1 font-medium ${
-                          content.length > 270 ? "text-red-500" : "text-slate-400"
-                        }`}
-                      >
-                        {content.length}/280
-                      </div>
-                    </div>
-
-                {/**Media upload */}
-                    <div>
-                      <label className="block text-xs text-slate-500 uppercase mb-2">
-                        Media (optional)
-                      </label>
-                      {mediaFile && mediaPreviewUrl ? (
-                        <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                          {mediaFile.type.startsWith("image/")
-                           ?<img src={mediaPreviewUrl}
-                          alt="preview" className="w-full h-40 object-cover"/>
-                          : <video src={mediaPreviewUrl} className="w-full h-40 object-cover"
-                          controls/>}
-                          <button onClick={()=>setMediaFile(null)} className="absolute top-2 right-2 size-7 bg-slate-900/60
-                          hover:bg-slate-900/80 text-white rounded-full flex items-center
-                          justify-center transition-colors"><XIcon className="size-3.5"/></button>
-                        </div>
-                      ):(
-                        <label className="flex items-center justify-center gap-2 p-5 py-10 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-red-300 hover:bg-red-50/30 transition-all group">
-                          <span className="text-sm text-slate-500 group-hover:text-red-500 transition-colors">Click to upload image or video</span>
-                          <input
-                            type="file"
-                            accept="image/*,video/*"
-                            className="hidden"
-                            onChange={(e) => e.target.files?.[0] && setMediaFile(e.target.files[0])}
-                          />
-                        </label>
+                      }`}
+                    >
+                      <p.icon className="size-4.5" />
+                      {!isConnected && (
+                        <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-amber-400 border border-white" />
                       )}
-                    </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5">
+                Dimmed platforms are not connected.
+              </p>
+            </div>
 
-                {/**Date & Time */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 uppercase mb-2">Date</label>
-                    <input
-                      type="date"
-                      value={scheduledDate}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+            {/**Content */}
+            <div>
+              <label className="block text-xs text-slate-500 uppercase mb-2">
+                Content
+              </label>
+              <textarea
+                required
+                rows={5}
+                placeholder="What do you want to share today?"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm placeholder-slate-400 outline-none resize-none"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+              <div
+                className={`text-right text-xs mt-1 font-medium ${
+                  content.length > 270 ? "text-red-500" : "text-slate-400"
+                }`}
+              >
+                {content.length}/280
+              </div>
+            </div>
+
+            {/**Media upload */}
+            <div>
+              <label className="block text-xs text-slate-500 uppercase mb-2">
+                Media (optional)
+              </label>
+              {mediaFile && mediaPreviewUrl ? (
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                  {mediaFile.type.startsWith("image/") ? (
+                    <img
+                      src={mediaPreviewUrl}
+                      alt="preview"
+                      className="w-full h-40 object-cover"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 uppercase mb-2">Time</label>
-                    <input
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                  ) : (
+                    <video
+                      src={mediaPreviewUrl}
+                      className="w-full h-40 object-cover"
+                      controls
                     />
-                  </div>
+                  )}
+                  <button
+                    onClick={() => setMediaFile(null)}
+                    className="absolute top-2 right-2 size-7 bg-slate-900/60
+                          hover:bg-slate-900/80 text-white rounded-full flex items-center
+                          justify-center transition-colors"
+                  >
+                    <XIcon className="size-3.5" />
+                  </button>
                 </div>
+              ) : (
+                <label className="flex items-center justify-center gap-2 p-5 py-10 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-red-300 hover:bg-red-50/30 transition-all group">
+                  <span className="text-sm text-slate-500 group-hover:text-red-500 transition-colors">
+                    Click to upload image or video
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      e.target.files?.[0] && setMediaFile(e.target.files[0])
+                    }
+                  />
+                </label>
+              )}
+            </div>
 
-                {/**Submit */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full rounded-2xl bg-red-500 px-5 py-3 text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {loading ? "Scheduling..." : "Schedule Post"}
-                </button>
+            {/**Date & Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-slate-500 uppercase mb-2">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 uppercase mb-2">
+                  Time
+                </label>
+                <input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"
+                />
+              </div>
+            </div>
 
-            </form>
+            {/**Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-2xl bg-red-500 px-5 py-3 text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Scheduling..." : "Schedule Post"}
+            </button>
+          </form>
         </div>
-
       </div>
-
 
       {/**Queue Panel */}
       <div className="flex-1">
@@ -273,16 +311,25 @@ function Schedular() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <FolderKanban className="h-5 w-5 text-slate-500" />
-              <h3 className="text-sm font-semibold text-slate-900">Scheduled Posts</h3>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Scheduled Posts
+              </h3>
             </div>
             {scheduled.length === 0 ? (
               <p className="text-sm text-slate-500">No scheduled posts yet.</p>
             ) : (
               <ul className="space-y-3">
                 {scheduled.map((post) => (
-                  <li key={post._id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="text-sm font-medium text-slate-900">{post.content}</div>
-                    <div className="text-xs text-slate-500">{post.scheduledFor}</div>
+                  <li
+                    key={post._id}
+                    className="rounded-2xl border border-slate-200 p-4"
+                  >
+                    <div className="text-sm font-medium text-slate-900">
+                      {post.content}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {post.scheduledFor}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -292,16 +339,25 @@ function Schedular() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <FolderKanban className="h-5 w-5 text-slate-500" />
-              <h3 className="text-sm font-semibold text-slate-900">Published Posts</h3>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Published Posts
+              </h3>
             </div>
             {published.length === 0 ? (
               <p className="text-sm text-slate-500">No published posts yet.</p>
             ) : (
               <ul className="space-y-3">
                 {published.map((post) => (
-                  <li key={post._id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="text-sm font-medium text-slate-900">{post.content}</div>
-                    <div className="text-xs text-slate-500">{post.scheduledFor}</div>
+                  <li
+                    key={post._id}
+                    className="rounded-2xl border border-slate-200 p-4"
+                  >
+                    <div className="text-sm font-medium text-slate-900">
+                      {post.content}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {post.scheduledFor}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -310,7 +366,7 @@ function Schedular() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Schedular
+export default Schedular;
