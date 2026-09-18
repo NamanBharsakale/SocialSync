@@ -27,14 +27,11 @@ export default function CTA() {
 
                         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
                             <Link to="/login" className="bg-red-500 text-white rounded-full font-semibold hover:bg-red-600 hover:shadow-[0_8px_24px_rgba(239,68,68,0.35)] inline-flex items-center gap-2 text-[15px] px-10 py-4 w-full sm:w-auto justify-center">
-                                Get Started Free <ArrowRightIcon className="size-4" />
+                                Get Started <ArrowRightIcon className="size-4" />
                             </Link>
-                            <a href="#pricing" className="bg-transparent text-[#333] border-[1.5px] border-black/10 rounded-full font-medium hover:bg-black/5 hover:border-black/20 inline-flex items-center gap-2 text-[15px] px-10 py-4 w-full sm:w-auto justify-center">
-                                View Pricing
-                            </a>
+                           
                         </div>
 
-                        <p className="mt-6 text-xs text-gray-400">No credit card required · Cancel anytime</p>
                     </div>
                 </div>
             </div>

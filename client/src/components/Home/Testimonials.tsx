@@ -2,23 +2,23 @@ import { StarIcon } from "lucide-react";
 
 const testimonials = [
     {
-        name: "Sarah K.",
-        role: "Marketing Manager",
-        avatar: "S",
+        name: "Pratik S.",
+        role: "Student AT WCE MECH'28",
+        avatar: "P",
         avatarBg: "from-red-400 to-pink-400",
-        text: "Scheduler has saved our team 10+ hours a week. The AI composer is genuinely impressive — it writes content that sounds like us.",
+        text: "Scheduler has saved my team 2+ hours a week. The AI composer is genuinely impressive — it writes content that sounds like us.",
     },
     {
-        name: "Marcus L.",
-        role: "Indie Creator",
+        name: "Madanraj S.",
+        role: "Student AT WCE AIML'28",
         avatar: "M",
         avatarBg: "from-violet-400 to-purple-500",
         text: "I used to dread posting. Now I queue up a whole week of content in 20 minutes. The smart scheduling feature alone is worth it.",
     },
     {
-        name: "Priya D.",
-        role: "Startup Founder",
-        avatar: "P",
+        name: "Krushan D..",
+        role: "Student AT WCE IT'28",
+        avatar: "K",
         avatarBg: "from-sky-400 to-blue-500",
         text: "Finally a scheduler that's beautiful AND powerful. The clean dashboard makes it easy to see exactly what's going out and when.",
     },

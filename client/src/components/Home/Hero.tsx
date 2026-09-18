@@ -30,7 +30,7 @@ export default function Hero() {
                 {/* CTAs */}
                 <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
                     <Link to="/login" className="bg-red-500 text-white rounded-full font-medium hover:bg-red-600 hover:shadow-[0_8px_24px_rgba(239,68,68,0.35)] inline-flex items-center gap-2 text-[15px] px-8 py-3.5 w-full sm:w-auto justify-center transition-all">
-                        Start for free <ArrowRightIcon className="size-4" />
+                        Get Started <ArrowRightIcon className="size-4" />
                     </Link>
                     <a href="#how-it-works" className="bg-transparent text-[#333] border-[1.5px] border-black/10 rounded-full font-medium hover:bg-black/5 hover:border-black/20 inline-flex items-center gap-2 text-[15px] px-8 py-3.5 w-full sm:w-auto backdrop-blur justify-center transition-all">
                         See how it works

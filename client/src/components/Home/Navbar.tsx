@@ -19,9 +19,7 @@ export default function Navbar() {
                     <a href="#how-it-works" className="hover:text-slate-900">
                         How it works
                     </a>
-                    <a href="#pricing" className="hover:text-slate-900">
-                        Pricing
-                    </a>
+                
                 </div>
 
                 {user ? (
