@@ -209,7 +209,7 @@ export const schedulePost = async (
       data: {
         userId: req.user.id,
         content,
-        platforms,
+        platforms: parsedPlatforms,
         mediaUrl,
         mediaType,
         scheduledFor: new Date(scheduledFor),
