@@ -4,6 +4,7 @@ import { AuthRequest } from "../middlewares/authMiddleware.js";
 import { GoogleGenAI } from "@google/genai";
 import { uploadToS3 } from "../config/s3Upload.js";
 import { prisma } from "../config/prisma.js";
+import { getS3PresignedUrl } from "../config/s3Url.js";
 // Generate post
 // POST /api/posts/generate
 export const generatePost = async (
@@ -137,7 +138,7 @@ export const generatePost = async (
 };
 
 // Get generations
-// GET /api/posts/generations
+// GET /api/posts/generations// GET /api/posts/generations
 export const getGenerations = async (
   req: AuthRequest,
   res: Response,
@@ -152,35 +153,23 @@ export const getGenerations = async (
       },
     });
 
-    res.json(generations);
+    const generationsWithUrls = await Promise.all(
+      generations.map(async (generation) => ({
+        ...generation,
+        mediaUrl: generation.mediaUrl
+          ? await getS3PresignedUrl(generation.mediaUrl, 3600)
+          : generation.mediaUrl,
+        mediaKey: generation.mediaUrl || undefined,
+      })),
+    );
+
+    res.json(generationsWithUrls);
   } catch (error: any) {
     res.status(500).json({
       message: error?.message || "Server Error",
     });
   }
 };
-
-// Get posts
-// GET /api/posts
-export const getPosts = async (
-  req: AuthRequest,
-  res: Response,
-): Promise<void> => {
-  try {
-    const posts = await prisma.post.findMany({
-      where: {
-        userId: req.user.id,
-      },
-    });
-
-    res.json(posts);
-  } catch (error: any) {
-    res.status(500).json({
-      message: error?.message || "Server Error",
-    });
-  }
-};
-
 // Schedule post
 // POST /api/posts
 export const schedulePost = async (
