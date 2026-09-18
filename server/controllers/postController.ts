@@ -224,3 +224,34 @@ export const schedulePost = async (
     });
   }
 };
+
+// Get posts
+// GET /api/posts
+export const getPosts = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const posts = await prisma.post.findMany({
+      where: {
+        userId: req.user.id,
+      },
+    });
+
+    const postsWithUrls = await Promise.all(
+      posts.map(async (post) => ({
+        ...post,
+        mediaUrl: post.mediaUrl
+          ? await getS3PresignedUrl(post.mediaUrl, 3600)
+          : post.mediaUrl,
+        mediaKey: post.mediaUrl || undefined,
+      })),
+    );
+
+    res.json(postsWithUrls);
+  } catch (error: any) {
+    res.status(500).json({
+      message: error?.message || "Server Error",
+    });
+  }
+};
