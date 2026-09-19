@@ -17,9 +17,9 @@ export const getAccounts = async (
         });
 
         res.json(accounts);
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Server error",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };
@@ -43,9 +43,9 @@ export const addAccount = async (
         });
 
         res.status(201).json(account);
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Server error",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };
@@ -80,9 +80,9 @@ export const disconnectAccount = async (
                         accountId: account.zernioAccountId,
                     },
                 });
-            } catch (e: any) {
+            } catch (_e: any) {
                 res.status(500).json({
-                    message: e?.response?.data?.message || e?.message,
+                    message: "Something went wrong while disconnecting the account.",
                 });
                 return;
             }
@@ -97,9 +97,9 @@ export const disconnectAccount = async (
         res.json({
             message: "Account disconnected successfully",
         });
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Server error",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };

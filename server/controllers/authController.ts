@@ -65,9 +65,9 @@ export const registerUser = async (
                 message: "Invalid user data",
             });
         }
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Invalid user data",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };
@@ -106,9 +106,9 @@ export const loginUser = async (
                 message: "invalid email or psw",
             });
         }
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Invalid user data",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };
@@ -204,15 +204,11 @@ export const forgotPassword = async (
             message:
                 "If that email exists, a reset link has been sent.",
         });
-    } catch (error: any) {
-        console.error(
-            "forgotPassword error:",
-            error?.message
-        );
+    } catch (_error: any) {
+        console.error("forgotPassword error");
 
         res.status(500).json({
-            message:
-                "Failed to send reset email. Please try again.",
+            message: "Failed to send reset email. Please try again.",
         });
     }
 };
@@ -275,9 +271,9 @@ export const resetPassword = async (
             message:
                 "Password updated successfully. You can now sign in.",
         });
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Server error",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };

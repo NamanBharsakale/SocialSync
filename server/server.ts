@@ -48,8 +48,14 @@ app.use("/api/activity", activityRouter);
 
 // Global error handler — must be LAST, after all routes
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error(err);
-    res.status(500).json({ message: err?.message || "Internal server error" });
+    console.error("Unhandled server error:", err);
+
+    const isProduction = process.env.NODE_ENV === "production";
+    const message = isProduction
+        ? "Internal server error"
+        : (err?.message || "Internal server error");
+
+    res.status(500).json({ message });
 });
 
 //initialize scheduler

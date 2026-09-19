@@ -130,9 +130,9 @@ export const generatePost = async (
     });
 
     res.json(generation);
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({
-      message: error?.message || "Server error",
+      message: "Something went wrong. Please try again later.",
     });
   }
 };
@@ -164,9 +164,9 @@ export const getGenerations = async (
     );
 
     res.json(generationsWithUrls);
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({
-      message: error?.message || "Server Error",
+      message: "Something went wrong. Please try again later.",
     });
   }
 };
@@ -218,9 +218,9 @@ export const schedulePost = async (
     });
 
     res.status(201).json(post);
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({
-      message: error?.message || "Server Error",
+      message: "Something went wrong. Please try again later.",
     });
   }
 };
@@ -249,9 +249,9 @@ export const getPosts = async (
     );
 
     res.json(postsWithUrls);
-  } catch (error: any) {
+  } catch (_error: any) {
     res.status(500).json({
-      message: error?.message || "Server Error",
+      message: "Something went wrong. Please try again later.",
     });
   }
 };

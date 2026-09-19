@@ -90,9 +90,9 @@ export const generateAuthUrl = async (
         res.json({
             url: authUrl,
         });
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Server error",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };
@@ -222,9 +222,9 @@ const account = existingAccount
         }
 
         res.json(syncedAccounts);
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Server Error",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };

@@ -27,9 +27,9 @@ export const getActivity = async (
         });
 
         res.json(activity);
-    } catch (error: any) {
+    } catch (_error: any) {
         res.status(500).json({
-            message: error?.message || "Server error",
+            message: "Something went wrong. Please try again later.",
         });
     }
 };
