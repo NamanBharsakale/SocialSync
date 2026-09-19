@@ -9,6 +9,8 @@ import activityRouter from "./routes/activityRoutes.js";
 import { initScheduler } from "./services/scheduleService.js";
 
 const app = express();
+app.set("trust proxy", 1);
+
 const normalizeOrigin = (value?: string) => value?.replace(/\/$/, "");
 const allowedOrigins = new Set(
     [
