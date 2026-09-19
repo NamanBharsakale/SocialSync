@@ -4,12 +4,11 @@
 
 ### AI-Powered Social Media Automation Platform
 
-**Centralized multi-tenant platform for connecting social accounts, scheduling posts via a persistent cron-backed job queue, and generating AI content — all from a single dashboard.**
+**A production-ready social media automation system built for AWS using EC2, S3, RDS, and IAM.**
 
-![MERN Stack](https://img.shields.io/badge/Stack-MERN-61DAFB?style=for-the-badge&logo=react)
+![AWS](https://img.shields.io/badge/AWS-EC2%20%7C%20S3%20%7C%20RDS-FF9900?style=for-the-badge&logo=amazonaws)
 ![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=for-the-badge&logo=typescript)
-![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=for-the-badge&logo=google)
-![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=for-the-badge&logo=mongodb)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 </div>
@@ -18,307 +17,333 @@
 
 ## Overview
 
-Managing multiple social media accounts is time-consuming and repetitive. SocialSync solves this with a centralized, multi-tenant platform: connect accounts, schedule posts against a persistent job store, and generate AI-powered captions and images — all from one dashboard.
+SocialSync helps users manage connected social accounts, generate AI-powered content, schedule posts, and publish them through a single dashboard. The system is designed to run fully on AWS infrastructure with the following components:
 
-The system is a **stateless Express REST API** backed by MongoDB, with a **`node-cron` scheduler** that polls for due posts and dispatches them to social platforms via the Zernio publishing API. Every request is authenticated with JWTs and every data access is scoped per-user for strict tenant isolation. AI content is generated through Google Gemini (text) and Pollinations AI (images), decoupled from the publishing pipeline so generation failures never block scheduling.
+- EC2 for the backend application and hosting
+- RDS PostgreSQL for persistent application data
+- S3 for media and uploaded files
+- IAM for least-privilege access control
+
+The backend is a Node.js + Express application with Prisma ORM and a scheduler that checks for pending posts. The frontend is a React + Vite application that communicates with the EC2-hosted API.
 
 ---
 
-## ✨ Features
+## Core Features
 
-| Feature | Description |
-|---|---|
-| 📊 **Unified Dashboard** | Single-pane view of connected accounts, scheduled queue, and activity log |
-| 🔗 **Multi-Account Connect** | Link multiple platforms; credentials/tokens persisted per-account and per-user |
-| 📅 **Persistent Scheduler** | `node-cron` worker polls MongoDB for due posts and publishes them — survives restarts (state lives in DB, not memory) |
-| 🤖 **AI Content Generator** | Platform-optimized captions via Google Gemini with structured prompt templates |
-| 🎨 **AI Image Generator** | On-demand image generation via Pollinations AI (keyless), URLs persisted to Cloudinary |
-| 🔐 **JWT Authentication** | Stateless auth with signed tokens, bcrypt-hashed passwords, route-level `protect` middleware |
-| 🔑 **Password Reset** | Tokenized reset flow: hashed single-use token + TTL expiry, delivered over Gmail SMTP |
-| 🔒 **Tenant Isolation** | Every query filtered by `userId` from the JWT — no cross-user reads/writes |
-| 📝 **Activity Logging** | Immutable audit trail of publish attempts, successes, and failures |
-| 🎨 **Responsive UI** | React + Vite + Tailwind, mobile-first dashboard |
+- Unified dashboard for managing social content and accounts
+- AI text generation using Gemini
+- AI image generation flow with uploaded/generated media saved to S3
+- Post scheduling and async publishing
+- JWT-based authentication and account-bound access control
+- Password reset flow with secure hashed tokens
+- Activity logs and per-user data isolation
+- AWS deployment with EC2, S3, RDS, and IAM
+
+---
+
+## AWS Architecture
+
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│                              Internet                                 │
+└───────────────────────────────────────┬──────────────────────────────┘
+                                        │ HTTPS
+                                        ▼
+                        ┌──────────────────────────────┐
+                        │          Browser             │
+                        │   React Frontend (Vite)      │
+                        └──────────────┬───────────────┘
+                                       │ API calls
+                                       ▼
+                        ┌──────────────────────────────┐
+                        │          EC2 Instance         │
+                        │   Node.js + Express API       │
+                        │   Nginx / reverse proxy       │
+                        │   Scheduler / background job │
+                        └───────┬──────────────────────┘
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+                    ▼                       ▼
+        ┌─────────────────────┐   ┌────────────────────────────┐
+        │   Amazon RDS        │   │     Amazon S3 Bucket       │
+        │   PostgreSQL        │   │   media uploads / images  │
+        └─────────────────────┘   └────────────────────────────┘
+                    ▲
+                    │
+                    │ IAM Role / Instance Profile
+                    │ permissions for S3 and app access
+                    ▼
+                    ┌─────────────────────┐
+                    │   IAM Policies      │
+                    │  least privilege    │
+                    └─────────────────────┘
+```
+
+This architecture keeps the application focused on four AWS services only:
+
+- EC2: application runtime
+- S3: file/media storage
+- RDS: relational database
+- IAM: permissions and security boundaries
 
 ---
 
 ## Tech Stack
 
-**Frontend**
-- React.js (Vite, TypeScript), Tailwind CSS, React Router, Axios (interceptor-based token injection)
+### Frontend
+- React
+- Vite
+- TypeScript
+- Axios
 
-**Backend**
-- Node.js, Express.js (TypeScript), MongoDB, Mongoose (schema-level validation + indexes)
+### Backend
+- Node.js
+- Express
+- TypeScript
+- Prisma ORM
+- JWT authentication
 
-**Auth & Security**
-- JWT (HS256), bcrypt.js (salted hashing), Nodemailer + Gmail SMTP, hashed TTL reset tokens
+### Database
+- PostgreSQL on AWS RDS
 
-**AI & Automation**
-- Google Gemini API (text generation), Pollinations AI (keyless image generation), Zernio API (cross-platform publishing), `node-cron` (scheduled dispatch)
+### Storage
+- Amazon S3 for uploads and generated media
 
-**Storage & Media**
-- Cloudinary (image CDN + transforms), Multer (multipart upload handling)
-
-**Dev Tools**
-- CodeRabbit (AI review), ESLint, Git & GitHub
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────┐
-│         Client (React + Vite + TS)           │
-│   Axios interceptor → Bearer <JWT>           │
-└───────────────────────┬─────────────────────┘
-                        │ HTTPS / REST
-                        ▼
-┌─────────────────────────────────────────────┐
-│      Express REST API (stateless, TS)        │
-│  ┌────────────┐  ┌──────────────────────┐    │
-│  │ protect MW │→ │ Controllers          │    │
-│  │  (JWT)     │  │ auth / post / account│    │
-│  └────────────┘  └──────────┬───────────┘    │
-│                             │                 │
-│  ┌──────────────────────────▼──────────────┐ │
-│  │ scheduleService (node-cron worker)       │ │
-│  │  poll due posts → publish → log result   │ │
-│  └──────────────────────────┬──────────────┘ │
-└─────────┬─────────┬─────────┬────────────────┘
-          ▼         ▼         ▼
-     ┌────────┐ ┌───────┐ ┌──────────┐
-     │MongoDB │ │Gemini │ │ Zernio   │──▶ Social Platforms
-     └────────┘ └───────┘ └──────────┘
-          ▲         ▲
-     Cloudinary  Pollinations AI
-```
-
-The scheduler is **decoupled** from the request/response path: users create posts synchronously, but publication happens asynchronously when the cron worker finds a post whose `scheduledAt <= now` and `status === 'pending'`.
+### Security
+- AWS IAM role-based permissions
+- EC2 security groups
+- JWT and bcrypt-based app security
 
 ---
 
 ## Project Structure
 
-```
+```text
 SocialSync/
-├── client/                       # React + Vite frontend
-│   └── src/
-│       ├── api/                # Axios instance + auth interceptor
-│       ├── assets/             # Platform definitions, static images
-│       ├── components/         # Layout, Sidebar, Modals, Home sections
-│       ├── context/            # AuthContext (JWT state, token persistence)
-│       ├── pages/              # Dashboard, Accounts, Scheduler, AIComposer,
-│       │                       #   Login, ResetPassword
-│       └── App.tsx             # Route tree + protected route guards
+├── client/                   # React frontend
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
 │
-├── server/                     # Express + TypeScript backend
-│   ├── config/                 # DB, Cloudinary, Multer, Zernio, Mailer
-│   ├── controllers/            # authController, postController, ...
-│   ├── middlewares/            # JWT protect guard, error handler
-│   ├── model/                  # User, Account, Posts, Generation, ActivityLog
-│   ├── routes/                 # authRoutes, postRoutes, accountRoutes, ...
-│   ├── services/               # scheduleService (node-cron dispatch loop)
-│   └── server.ts               # Entry point (DB connect → cron start → listen)
+├── server/                   # Express + TypeScript backend
+│   ├── config/               # Prisma, S3, Mailer, etc.
+│   ├── controllers/          # Auth / post / account logic
+│   ├── middlewares/          # Auth middleware and validation
+│   ├── prisma/               # Prisma schema and migrations
+│   ├── routes/               # Express API routes
+│   ├── services/             # Scheduler / background service
+│   ├── server.ts             # App entry point
+│   └── package.json
 │
-├── docs/                       # Architecture, data-flow, deployment notes
+├── docs/
+│   ├── architect.md
+│   └── deployment.md
 ├── README.md
+├── package.json
 └── .gitignore
 ```
 
 ---
 
-## 🗃️ Data Model
+## Data Model
 
-| Collection | Key Fields | Notes |
-|---|---|---|
-| **User** | `email` (unique index), `password` (bcrypt), `resetTokenHash`, `resetTokenExpiry` | Reset token stored hashed, never in plaintext |
-| **Account** | `userId` (FK), `platform`, `credentials/tokens` | Compound index on `(userId, platform)` for tenant-scoped lookups |
-| **Posts** | `userId`, `content`, `imageUrl`, `platforms[]`, `scheduledAt`, `status` | `status`: `pending → published \| failed`; indexed on `(status, scheduledAt)` for the cron poll |
-| **Generation** | `userId`, `prompt`, `output`, `type` | Persists AI generations for reuse/audit |
-| **ActivityLog** | `userId`, `action`, `postId`, `result`, `timestamp` | Append-only audit trail |
+The project uses PostgreSQL via Prisma. Primary models include:
+
+- User
+- Account
+- Post
+- Generation
+- ActivityLog
+
+These are defined in the Prisma schema under `server/prisma/schema.prisma`.
 
 ---
 
-## ⚙️ Getting Started
+## Required AWS Resources
+
+### 1. EC2
+Use a Linux EC2 instance for:
+- backend runtime
+- reverse proxy / NGINX
+- process management with PM2
+- deployment pipeline trigger
+
+### 2. RDS PostgreSQL
+Use a managed PostgreSQL instance for:
+- users
+- accounts
+- scheduled posts
+- generations
+- activity logs
+
+### 3. S3 Bucket
+Use an S3 bucket for:
+- generated image uploads
+- user media uploads
+- signed URLs for temporary access
+
+### 4. IAM
+Use an EC2 instance profile with least-privilege permissions such as:
+- S3 read/write access for the application bucket
+- minimal access required for deployment tooling
+- no unnecessary AWS services beyond these required permissions
+
+---
+
+## Local Development Setup
 
 ### Prerequisites
-- Node.js v18+
-- MongoDB (local or Atlas free tier)
-- Google Gemini API key — [get one free at ai.google.dev](https://ai.google.dev/)
-- Zernio API key — [zernio.com](https://zernio.com)
-- Cloudinary account (free tier) — [cloudinary.com](https://cloudinary.com)
-- Gmail account with an **App Password** (not your regular password)
+- Node.js 18+
+- PostgreSQL database (local or RDS)
+- AWS account with EC2, S3, RDS access
+- Google Gemini API key
+- Zernio API key
 
-### 1. Clone
-
-```bash
-git clone https://github.com/NamanBharsakale/SocialSync.git
-cd SocialSync
-```
-
-### 2. Backend
-
-```bash
-cd server
-npm install
-```
-
+### Backend environment
 Create `server/.env`:
 
 ```env
 PORT=3000
-MONGODB_URL=your_mongodb_atlas_connection_string
+DATABASE_URL=postgresql://username:password@your-rds-endpoint:5432/socialsync
 JWT_SECRET=your_random_32_char_secret
 JWT_EXPIRES_IN=7d
 
 GEMINI_API_KEY=your_google_ai_studio_key
 ZERNIO_API_KEY=your_zernio_api_key
 
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+AWS_REGION=us-east-1
+S3_BUCKET_NAME=socialsync-media
 
 EMAIL_USER=your_gmail@gmail.com
-EMAIL_PASS=your_gmail_app_password_no_spaces
+EMAIL_PASS=your_gmail_app_password
 
-CLIENT_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
 ```
 
-> **Gmail App Password:** Google Account → Security → 2-Step Verification → App Passwords. Paste the 16-character code without spaces.
-
-```bash
-npm run server    # starts with nodemon + tsx
-```
-
-### 3. Frontend
-
-```bash
-cd client
-npm install
-```
-
+### Frontend environment
 Create `client/.env`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3000
 ```
 
+### Run locally
+
 ```bash
+cd server
+npm install
+npx prisma generate
+npm run server
+```
+
+```bash
+cd client
+npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`.
+The app will run at `http://localhost:5173`.
 
 ---
 
-## 🔐 Authentication Flow
+## Production AWS Deployment
 
+### 1. Prepare RDS PostgreSQL
+- Create an RDS PostgreSQL instance
+- Set a strong master password
+- Enable public access only if necessary for your network design
+- Note the endpoint and database name
+- Store the connection string as `DATABASE_URL`
+
+### 2. Prepare S3
+- Create a bucket for uploads and generated media
+- Enable bucket versioning if required
+- Configure bucket policy and IAM permissions for the EC2 instance role
+- Use presigned URLs for secure temporary file access
+
+### 3. Prepare EC2
+- Launch an Ubuntu EC2 instance
+- Attach an IAM role with S3 access
+- Open only required inbound ports (for example 22, 80, 443)
+- Install Node.js, Git, and PM2
+- Clone the repository and install dependencies
+
+### 4. Deploy backend
+
+```bash
+cd /home/ubuntu/SocialSync/server
+npm install
+npx prisma generate
+npm run build
+pm2 start dist/server.js --name socialsync-api
+pm2 save
 ```
-Register → bcrypt.hash(password) → persist User
-Login    → bcrypt.compare → jwt.sign({ userId }, SECRET, { expiresIn })
-Request  → Axios interceptor attaches Bearer token
-           → protect MW: jwt.verify → req.user = { userId }
-           → controller scopes every query by req.user.userId
 
-Forgot password → generate raw token → store SHA-256 hash + TTL
-                → email raw token via Gmail SMTP
-Reset           → hash incoming token → match + check expiry
-                → bcrypt.hash(newPassword) → invalidate token
+### 5. Configure reverse proxy
+Set up NGINX on EC2 to proxy traffic to the Node.js app. Example:
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
 ```
 
-Reset tokens are **single-use** and stored hashed, so a database leak never exposes usable reset links.
+### 6. Configure IAM
+Attach an IAM policy to the EC2 instance role with restricted access to the required S3 bucket only. Keep it minimal and avoid unnecessary AWS permissions.
 
 ---
 
-## 🤖 AI Content Generation Flow
+## Security Considerations
 
-```
-User enters topic
-        │
-        ▼
-POST /api/ai/generate  (JWT protected)
-        │
-        ▼
-Backend builds structured prompt → Google Gemini API
-        │
-        ├──▶ caption text
-        └──▶ image prompt → Pollinations AI → Cloudinary upload
-        │
-        ▼
-Generation persisted (userId, prompt, output)
-        │
-        ▼
-Returned to dashboard → user edits → schedules → publishes
-```
-
-Text and image generation are independent calls, so an image failure still returns usable caption text.
+- Host the app on EC2 behind an NGINX reverse proxy
+- Use strong JWT secrets and secure environment variables
+- Keep RDS credentials in environment variables or AWS Secrets Manager if needed
+- Restrict EC2 security groups to only required ports
+- Give the EC2 IAM role only the S3 permissions required by the app
+- Use signed URLs for temporary object access instead of exposing private bucket data broadly
 
 ---
 
-## 🔄 Scheduling & Publishing Pipeline
+## Deployment Notes
 
-```
-Create Post (status: pending, scheduledAt: T)
-        │
-        ▼
-node-cron tick (every minute)
-        │
-        ▼
-Query: { status: 'pending', scheduledAt: { $lte: now } }
-        │
-        ▼
-For each due post → Zernio API publish per platform
-        │
-   ┌────┴────┐
-   ▼         ▼
-success    failure
-   │         │
-   ▼         ▼
-status:published   status:failed
-        │
-        ▼
-Append ActivityLog entry
-```
-
-Because due-post state lives in MongoDB (not an in-memory timer), scheduled jobs survive server restarts and horizontal restarts pick up exactly where they left off.
+- The current backend deployment workflow already targets EC2, which matches the AWS-only model you requested.
+- The app is not designed to run on extra AWS services beyond EC2, S3, RDS, and IAM.
+- The intended production stack is intentionally simple and cost-conscious.
 
 ---
 
-## Deployment
+## Roadmap
 
-| Layer | Platform |
-|---|---|
-| Frontend | Vercel, Netlify |
-| Backend | Render, Railway, VPS |
-| Database | MongoDB Atlas |
-| Media | Cloudinary |
-
-> **Note:** run a single scheduler instance (or add a distributed lock / `findOneAndUpdate` atomic claim) to avoid double-publishing when scaling the API horizontally.
+- Improve EC2 deployment automation
+- Add backup and restore checks for RDS
+- Tighten S3 bucket policies
+- Add CloudWatch monitoring and log review
+- Improve scheduler resilience and duplicate-job protection
 
 ---
 
-## 🗺️ Roadmap
+## Contributing
 
-- [ ] Analytics Dashboard
-- [x] AI Image Generation (Pollinations AI)
-- [ ] Team Collaboration
-- [ ] Social Media Insights
-- [ ] Multi-workspace Support
-- [ ] Subscription & Payment (Stripe)
-- [ ] Content Performance Tracking
-- [ ] AI Content Optimization
-- [ ] Distributed scheduler with atomic job claiming (multi-instance safe)
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
+Contributions are welcome.
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add your feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Commit your changes
+4. Push to your branch
+5. Open a pull request
 
 ---
 
@@ -330,8 +355,6 @@ Contributions are welcome!
 
 <div align="center">
 
-Built with ❤️ using the MERN Stack, TypeScript, Google Gemini, Pollinations AI, and Zernio API.
-
-If this project helped you, please ⭐ the repository!
+Built with AWS-native simplicity: EC2, S3, RDS, and IAM.
 
 </div>

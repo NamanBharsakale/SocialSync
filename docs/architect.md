@@ -1,161 +1,119 @@
-# SocialSync — System Architecture
+# SocialSync — AWS Architecture
 
 ## Overview
 
-SocialSync is a MERN-stack AI social media automation platform. Users connect their social accounts, generate AI content (text + image), schedule posts, and publish automatically via Zernio API.
+SocialSync is an AI-powered social media automation platform designed to run on a small AWS-only stack. The target infrastructure is intentionally limited to the following services:
+
+- EC2 for the application backend and hosting
+- RDS PostgreSQL for persistence
+- S3 for media and uploaded files
+- IAM for access control and least-privilege permissions
+
+This architecture keeps the system simple, maintainable, and cost-conscious while still supporting scheduling, media storage, and secure application hosting.
 
 ---
 
 ## High-Level Architecture
 
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│                            Users / Browser                           │
+└───────────────────────────────────────┬──────────────────────────────┘
+                                        │ HTTPS
+                                        ▼
+                        ┌──────────────────────────────┐
+                        │      EC2 Instance            │
+                        │  React frontend + API        │
+                        │  NGINX / PM2 / Node.js       │
+                        └──────────────┬───────────────┘
+                                       │
+                 ┌─────────────────────┼─────────────────────┐
+                 │                     │                     │
+                 ▼                     ▼                     ▼
+      ┌───────────────────┐   ┌────────────────────┐   ┌────────────────────┐
+      │ Amazon RDS        │   │ Amazon S3 Bucket   │   │ IAM Role / Policy  │
+      │ PostgreSQL        │   │ media / uploads    │   │ least privilege    │
+      └───────────────────┘   └────────────────────┘   └────────────────────┘
 ```
-┌─────────────────────────────────────────┐
-│              Client (React)             │
-│  Vite · React Router · Tailwind CSS     │
-│  Axios · AuthContext · JWT localStorage │
-└──────────────────┬──────────────────────┘
-                   │ HTTP (REST)
-                   ▼
-┌─────────────────────────────────────────┐
-│          Backend (Express + TS)         │
-│  Routes → Middleware → Controllers      │
-│  Services (scheduler) · Config          │
-└────┬──────────┬──────────┬─────────────┘
-     │          │          │
-     ▼          ▼          ▼
- MongoDB    Cloudinary   Third-Party APIs
- (Atlas)    (media CDN)  Gemini · Pollinations · Zernio
-```
+
+The application runtime lives on EC2, while data persists in RDS and media files are stored in S3. IAM is used to grant the EC2 instance the minimum required access needed to work with S3 and run the application securely.
 
 ---
 
-## Directory Structure
+## Application Layers
 
-```
-SocialSync/
-├── client/                  # React frontend
-│   └── src/
-│       ├── api/             # Axios instance + interceptors
-│       ├── components/      # Shared UI (Layout, Sidebar, Modals)
-│       │   └── Home/        # Landing page sections
-│       ├── context/         # AuthContext (JWT state)
-│       ├── pages/           # Route-level page components
-│       └── App.tsx          # Router setup
-│
-├── server/                  # Express backend
-│   ├── config/              # DB, Cloudinary, Multer, Zernio setup
-│   ├── controllers/         # Business logic per domain
-│   ├── middlewares/         # JWT auth guard
-│   ├── model/               # Mongoose schemas
-│   ├── routes/              # Express routers
-│   ├── services/            # node-cron scheduler
-│   └── server.ts            # Entry point
-│
-└── docs/                    # Project documentation
-```
+### 1. Client Layer
+The frontend is a React + Vite single-page app that sends requests to the backend API.
 
----
+### 2. Application Layer
+The backend runs on an EC2 instance with:
+- Express API
+- Prisma ORM
+- JWT authentication middleware
+- scheduler service for pending posts
+- media upload handling
 
-## Backend API Routes
+### 3. Data Layer
+The project uses PostgreSQL on RDS, which stores:
+- users
+- social accounts
+- scheduled posts
+- generated content
+- application activity logs
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | No | Register new user |
-| POST | `/api/auth/login` | No | Login, receive JWT |
-| POST | `/api/auth/forgot-password` | No | Send password-reset email (Gmail SMTP) |
-| POST | `/api/auth/reset-password/:token` | No | Consume reset token, update password |
-| GET | `/api/accounts` | Yes | List connected social accounts |
-| POST | `/api/accounts` | Yes | Add a social account directly |
-| DELETE | `/api/accounts/:id` | Yes | Disconnect a social account |
-| POST | `/api/posts/generate` | Yes | Generate AI text + image |
-| GET | `/api/posts/generations` | Yes | Fetch past AI generations |
-| POST | `/api/posts` | Yes | Schedule a post (with optional media upload) |
-| GET | `/api/posts` | Yes | Fetch all scheduled posts |
-| GET | `/api/activity` | Yes | Fetch activity log |
-| GET | `/api/oauth/:platform/url` | Yes | Get Zernio OAuth authorization URL |
-| GET | `/api/oauth/sync` | Yes | Pull connected accounts from Zernio into DB |
+### 4. Storage Layer
+Amazon S3 stores uploaded and generated media files. The backend generates presigned URLs for secure temporary access when needed.
+
+### 5. Security Layer
+IAM roles and instance policies ensure the EC2 application has controlled access to required AWS resources. Security groups control access to the EC2 instance and RDS database.
 
 ---
 
-## Data Models
+## AWS-Only Scope
 
-### User
-```
-_id, name, email, password (bcrypt),
-resetPasswordToken (sha256 hash, optional),
-resetPasswordExpires (Date, optional),
-zernioProfileId (optional), createdAt
-```
+This project intentionally uses only the following AWS services:
 
-### Account
-```
-_id, user, platform (enum: twitter/linkedin/facebook/instagram/...),
-zernioAccountId, handle, avatarUrl,
-accessToken, refreshToken, tokenExpiresAt,
-status (connected/disconnected), createdAt
-```
+- EC2
+- S3
+- RDS
+- IAM
 
-### Generation (AI output)
-```
-_id, user, prompt, content, imagePrompt, mediaUrl, mediaType, tone, createdAt
-```
-
-### Post (scheduled)
-```
-_id, user, content, platforms[] (enum array), mediaUrl, mediaType,
-scheduledFor (Date, required), status (draft/scheduled/published/failed), createdAt
-```
-
-### ActivityLog
-```
-_id, user, action, platform, status, createdAt
-```
+No additional AWS services are required for the current architecture.
 
 ---
 
-## Key Dependencies
+## Deployment Pattern
 
-| Package | Purpose |
-|---|---|
-| `express` | HTTP server |
-| `mongoose` | MongoDB ODM |
-| `jsonwebtoken` + `bcrypt` | Auth (JWT sign/verify, password hashing) |
-| `nodemailer` | Transactional email (password reset via Gmail SMTP) |
-| `@google/genai` | Gemini text generation |
-| `cloudinary` | Media CDN storage |
-| `multer` | File upload middleware (memory storage) |
-| `@zernio/node` | Social media OAuth + publishing |
-| `node-cron` | Per-second scheduler daemon |
+```text
+Developer -> GitHub -> EC2 deployment -> Node.js app
+                                  |
+                                  +-> Prisma connects to RDS
+                                  +-> S3 uploads for media
+                                  +-> IAM role for S3 permissions
+```
+
+This keeps the deployment model simple and aligned with the current repository design.
 
 ---
 
-## Account Isolation — Security Design
+## Security Design
 
-Each user gets their own Zernio profile. The profile ID is stored on the User document and reused on every request — `getOrCreateZernioProfile()` only calls `zernio.profiles.createProfile()` when no ID is stored. It never calls `listProfiles()` (which returns all profiles under the shared API key and would hand one user another's profile).
-
-The `syncsAccounts` upsert filter is `{ zernioAccountId, user: req.user._id }`. This means:
-- A new account is created only under the requesting user.
-- An existing account belonging to a different user is never matched or overwritten.
-- `getAccounts` (used by the frontend) queries `{ user: req.user._id }` — each user sees only their own.
-
----
-
-## AIComposer Schedule Modal
-
-The modal is controlled by `activeSchedular` state (null = closed, any generation object = open). Closing triggers:
-- Success after scheduling: `setActiveSchedular(null)` in the success path of `handleSchedule`
-- Backdrop click: `onClick` on the outer overlay div calls `setActiveSchedular(null)`
-- ✕ button: same setter
-
-The inner modal card has `e.stopPropagation()` so clicks inside don't bubble to the backdrop.
+- EC2 handles the application runtime
+- RDS stores persistent relational data
+- S3 stores public/private media assets
+- IAM limits the EC2 instance to only the required permissions
+- Environment variables are kept outside the source code
+- JWT tokens are used for authenticated API access
 
 ---
 
-## Image Generation — Previous vs Current
+## Summary
 
-| | Previous | Current |
-|---|---|---|
-| Provider | Leonardo AI | Pollinations AI |
-| API Key Required | Yes (paid) | No |
-| Integration | REST + polling loop | Single URL fetch |
-| Flow | POST → poll GET until COMPLETE → upload | Build URL → Cloudinary uploads directly |
+The system architecture is intentionally minimal and practical:
+
+- app server runs on EC2
+- database runs on RDS PostgreSQL
+- media is stored in S3
+- IAM manages access
+
+This is the AWS architecture that matches the current project and the deployment direction requested.
